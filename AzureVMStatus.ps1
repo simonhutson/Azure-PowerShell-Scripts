@@ -50,11 +50,11 @@ Function Get-ChildObject
 
 $ErrorActionPreference = 'Stop'
 
-$DateTime = Get-Date -f 'yyyy-MM-dd hhmmss'
+$DateTime = Get-Date -f 'yyyy-MM-dd HHmmss'
 
 # Login to the user's default Azure AD Tenant
 Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Login to User's default Azure AD Tenant"
-$Account = Login-AzureRmAccount
+$Account = Add-AzureRmAccount
 Write-Host
 
 # Get the list of Azure AD Tenants this user has access to, and select the correct one
@@ -70,11 +70,16 @@ else # User has access to only one Azure AD Tenant
 }
 Write-Host
 
+
+$TokenCache = (Get-AzureRmContext).TokenCache
+$Token = $TokenCache.ReadItems() | Where-Object { $_.TenantId -eq $Tenant.Id }
+
+
 if($Account.Context.Tenant.Id -ne $Tenant.Id)
 {
     # Login to the correct Azure AD Tenant
     Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Login to correct Azure AD Tenant"
-    $Account = Login-AzureRmAccount -TenantId $Tenant.Id
+    $Account = Add-AzureRmAccount -TenantId $Tenant.Id
     Write-Host
 }
 
@@ -198,9 +203,9 @@ foreach ($Subscription in $Subscriptions)
     $NetworkInterfaces = Get-AzureRmNetworkInterface
     Write-Host
 
-    Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Retrieving list of ARM Public IPs in Subscription: $($Subscription.Name)"
-    $PublicIpAddresses = Get-AzureRmPublicIpAddress
-    Write-Host
+    # Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Retrieving list of ARM Public IPs in Subscription: $($Subscription.Name)"
+    # $PublicIpAddresses = Get-AzureRmPublicIpAddress
+    # Write-Host
 
     if($VMs)
     {
@@ -247,6 +252,7 @@ foreach ($Subscription in $Subscriptions)
             $VMObject | Add-Member -MemberType NoteProperty -Name "OS Disk Caching" -Value $(Get-ChildObject -Object $VM -Path Properties.storageProfile.osDisk.Caching)
             $VMObject | Add-Member -MemberType NoteProperty -Name "OS Disk Type" -Value $(if(Get-ChildObject -Object $VM -Path Properties.storageProfile.osDisk.ManagedDisk){"Managed"}elseif(Get-ChildObject -Object $VM -Path Properties.storageProfile.osDisk.vhd){"Unmanaged"})
             $VMObject | Add-Member -MemberType NoteProperty -Name "OS Disk Storage Type" -Value $(Get-ChildObject -Object $VM -Path Properties.storageProfile.osDisk.ManagedDisk.StorageAccountType)
+            $VMObject | Add-Member -MemberType NoteProperty -Name "OS Disk Storage Account" -Value $(if($(Get-ChildObject -Object $VM -Path Properties.storageProfile.osDisk.vhd.uri) -ne ""){([System.Uri]$(Get-ChildObject -Object $VM -Path Properties.storageProfile.osDisk.vhd.uri)).Host}else{""})
             $VMObject | Add-Member -MemberType NoteProperty -Name "Data Disk Count" -Value $(Get-ChildObject -Object $VM -Path Properties.storageProfile.dataDisks.Count)
             $VMObject | Add-Member -MemberType NoteProperty -Name "Data Disk Max Count" -Value $(Get-ChildObject -Object $VMSize -Path MaxDataDiskCount)
             $VMObject | Add-Member -MemberType NoteProperty -Name "NIC Count" -Value $(Get-ChildObject -Object $VM -Path Properties.networkProfile.networkInterfaces.Count)
@@ -255,6 +261,7 @@ foreach ($Subscription in $Subscriptions)
             $VMObject | Add-Member -MemberType NoteProperty -Name "Primary NIC Primary Config" -Value $(Get-ChildObject -Object $VMPrimaryIpConfiguration -Path Name)
             $VMObject | Add-Member -MemberType NoteProperty -Name "Primary NIC Primary Config Private Ip" -Value $(Get-ChildObject -Object $VMPrimaryIpConfiguration -Path PrivateIpAddress)
             $VMObject | Add-Member -MemberType NoteProperty -Name "Primary NIC Primary Config Private Ip AllocationM" -Value $(Get-ChildObject -Object $VMPrimaryIpConfiguration -Path PrivateIpAllocationMethod)
+
 
             # Get all the Tags for this VM
             foreach($Tag in $Tags)
@@ -267,6 +274,18 @@ foreach ($Subscription in $Subscriptions)
                 {
                     $VMObject | Add-Member -MemberType NoteProperty -Name $("TAG [" + $Tag.Name + "]") -Value $null
                 }
+            }
+
+            # Loop through each Azure Location to retrieve a list of VM sizes with the same number of vCPUs, memory & data disks, to which this VM can be upgraded
+            #$VMAvailableSizes = Get-AzureRmVMSize -ResourceGroupName $VM.ResourceGroupName -VMName $VM.Name | Where-Object -FilterScript {$_.NumberOfCores -ge $VMSize.NumberOfCores -and $_.Name -match "^Standard_[DEFM].*(s_v3|s)$"} 
+            $VMAvailableSizes = Get-AzureRmVMSize -ResourceGroupName $VM.ResourceGroupName -VMName $VM.Name | Where-Object {$_.Name -match "^Standard_[DEFM].*(s_v3|s)$"}
+            if($VMAvailableSizes)
+            {
+                $VMObject | Add-Member -MemberType NoteProperty -Name "VM Upgrade Options" -Value $([String]::Join(";",$VMAvailableSizes.Name))
+            }
+            else
+            {
+                $VMObject | Add-Member -MemberType NoteProperty -Name "VM Upgrade Options" -Value ""
             }
 
             # Add the custom VM object to the Array
@@ -291,6 +310,7 @@ $VMObjects = @()
 # Loop through each Subscription
 foreach ($Subscription in $Subscriptions)
 {
+
     # Set the current Azure context
     Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Setting context for Subscription: $($Subscription.Name)"
     $Context = Set-AzureRmContext -SubscriptionId $Subscription -TenantId $Account.Context.Tenant.Id
@@ -328,6 +348,7 @@ foreach ($Subscription in $Subscriptions)
             $VMObject | Add-Member -MemberType NoteProperty -Name "OS Disk Caching" -Value $(Get-ChildObject -Object $VM -Path Properties.storageProfile.operatingSystemDisk.caching)
             $VMObject | Add-Member -MemberType NoteProperty -Name "OS Disk IO Type" -Value $(Get-ChildObject -Object $VM -Path Properties.storageProfile.operatingSystemDisk.ioType)
             $VMObject | Add-Member -MemberType NoteProperty -Name "OS Disk Source Image Name" -Value $(Get-ChildObject -Object $VM -Path Properties.storageProfile.operatingSystemDisk.sourceImageName)
+            $VMOBject | Add-Member -MemberType NoteProperty -Name "OS Disk Storage Account" -Value $(if($(Get-ChildObject -Object $VM -Path Properties.storageProfile.operatingSystemDisk.vhduri) -ne ""){([System.Uri]$(Get-ChildObject -Object $VM -Path Properties.storageProfile.operatingSystemDisk.vhduri)).Host}else{""}) -Force
             $VMObject | Add-Member -MemberType NoteProperty -Name "Data Disk Count" -Value $(Get-ChildObject -Object $VM -Path Properties.storageProfile.dataDisks.Count)
             $VMObject | Add-Member -MemberType NoteProperty -Name "Data Disk Max Count" -Value $(Get-ChildObject -Object $VMSize -Path MaxDataDiskCount)
             $VMObject | Add-Member -MemberType NoteProperty -Name "Private IP Address" -Value $(Get-ChildObject -Object $VM -Path Properties.instanceView.privateIpAddress)
