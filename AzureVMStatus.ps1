@@ -98,8 +98,11 @@ Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Retrieving list of
 $VMSizes =@()
 foreach($Location in $Locations)
 {
-    $VMSizes += Get-AzureRmVMSize -Location $Location.Location
-    Write-Host -NoNewline "."
+    if($Location.Providers.Contains("Microsoft.Compute"))
+    {
+        $VMSizes += Get-AzureRmVMSize -Location $Location.Location
+        Write-Host -NoNewline "."
+    }
 }
 
 # For some reason, Azure doesn't report these VM sizes, so we need to create them manually
