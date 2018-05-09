@@ -46,11 +46,10 @@ Function Get-ChildObject
 
 #endregion
 
-#region Login
-
 $ErrorActionPreference = 'Stop'
-
 $DateTime = Get-Date -f 'yyyy-MM-dd HHmmss'
+
+#region Login
 
 # Login to the user's default Azure AD Tenant
 Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Login to User's default Azure AD Tenant"
@@ -70,11 +69,11 @@ else # User has access to only one Azure AD Tenant
 }
 Write-Host
 
-
+# Get Authentication Token, just in case it is required in future
 $TokenCache = (Get-AzureRmContext).TokenCache
 $Token = $TokenCache.ReadItems() | Where-Object { $_.TenantId -eq $Tenant.Id }
 
-
+# Check if the current Azure AD Tenant is the required Tenant
 if($Account.Context.Tenant.Id -ne $Tenant.Id)
 {
     # Login to the correct Azure AD Tenant
@@ -83,17 +82,17 @@ if($Account.Context.Tenant.Id -ne $Tenant.Id)
     Write-Host
 }
 
-# Get list of Subscriptions associated with this Azure AD Tenant, for which this User has access
-Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Retrieving list of Azure Subscriptions for this Azure AD Tenant"
-$Subscriptions = Get-AzureRmSubscription -TenantId $Tenant.Id
-Write-Host
+#endregion
+
+
+#region Get VM Sizes
 
 # Get list of Azure Locations associated with this Azure AD Tenant, for which this User has access
 Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Retrieving list of Azure locations"
 $Locations = Get-AzureRmLocation
 Write-Host
 
-# Loop through each Azure Location to retrieve a complete list of  VM Sizes
+# Loop through each Azure Location to retrieve a complete list of VM Sizes
 Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Retrieving list of Azure VM Sizes across all locations"
 $VMSizes =@()
 foreach($Location in $Locations)
@@ -171,6 +170,11 @@ Write-Host
 
 #region ARM VM Details
 
+# Get list of Subscriptions associated with this Azure AD Tenant, for which this User has access
+Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Retrieving list of Azure Subscriptions for this Azure AD Tenant"
+$Subscriptions = Get-AzureRmSubscription -TenantId $Tenant.Id
+Write-Host
+
 # Loop through each Subscription to retireve a complete list of all the ARM Tags in use across all Subscriptions
 Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Retrieving list of Tags in use across all Subscriptions"
 $Tags = @()
@@ -206,9 +210,9 @@ foreach ($Subscription in $Subscriptions)
     $NetworkInterfaces = Get-AzureRmNetworkInterface
     Write-Host
 
-    # Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Retrieving list of ARM Public IPs in Subscription: $($Subscription.Name)"
-    # $PublicIpAddresses = Get-AzureRmPublicIpAddress
-    # Write-Host
+    Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Retrieving list of ARM Public IPs in Subscription: $($Subscription.Name)"
+    $PublicIpAddresses = Get-AzureRmPublicIpAddress
+    Write-Host
 
     if($VMs)
     {
@@ -216,11 +220,8 @@ foreach ($Subscription in $Subscriptions)
         foreach ($VM in $VMs)
         {
 
-            # Get the Primary Network Interface for this ARM VM
-            $VMPrimaryNetworkInterface = $NetworkInterfaces | Where-Object -FilterScript {$_.VirtualMachine.Id -eq $VM.ResourceId -and $_.Primary -eq $true} | Get-Unique
-
-            # Get the Primary IP Configuration for the Primary Network Interface
-            $VMPrimaryIpConfiguration = $VMPrimaryNetworkInterface.IpConfigurations | Where-Object -FilterScript {$_.Primary -eq $true} | Get-Unique
+            # Get the All Network Interface for this ARM VM
+            $VMNetworkInterfaces = $NetworkInterfaces | Where-Object -FilterScript {$_.VirtualMachine.Id -eq $VM.ResourceId}
 
             # Get the Status for this ARM VM
             $VMStatus = $VMStatuses | Where-Object -FilterScript {$_.Id -eq $VM.ResourceId} | Get-Unique
@@ -259,12 +260,35 @@ foreach ($Subscription in $Subscriptions)
             $VMObject | Add-Member -MemberType NoteProperty -Name "Data Disk Count" -Value $(Get-ChildObject -Object $VM -Path Properties.storageProfile.dataDisks.Count)
             $VMObject | Add-Member -MemberType NoteProperty -Name "Data Disk Max Count" -Value $(Get-ChildObject -Object $VMSize -Path MaxDataDiskCount)
             $VMObject | Add-Member -MemberType NoteProperty -Name "NIC Count" -Value $(Get-ChildObject -Object $VM -Path Properties.networkProfile.networkInterfaces.Count)
-            $VMObject | Add-Member -MemberType NoteProperty -Name "Primary NIC" -Value $(Get-ChildObject -Object $VMPrimaryNetworkInterface -Path Name)
-            $VMObject | Add-Member -MemberType NoteProperty -Name "Primary NIC Accelerated Networking" -Value $(Get-ChildObject -Object $VMPrimaryNetworkInterface -Path EnableAcceleratedNetworking)
-            $VMObject | Add-Member -MemberType NoteProperty -Name "Primary NIC Primary Config" -Value $(Get-ChildObject -Object $VMPrimaryIpConfiguration -Path Name)
-            $VMObject | Add-Member -MemberType NoteProperty -Name "Primary NIC Primary Config Private Ip" -Value $(Get-ChildObject -Object $VMPrimaryIpConfiguration -Path PrivateIpAddress)
-            $VMObject | Add-Member -MemberType NoteProperty -Name "Primary NIC Primary Config Private Ip AllocationM" -Value $(Get-ChildObject -Object $VMPrimaryIpConfiguration -Path PrivateIpAllocationMethod)
 
+            # Get all the Network Interfaces for this VM
+            $MaxNICCount = 4
+            for($i=0; $i -lt $MaxNICCount; $i++)
+            {
+                if($VMNetworkInterfaces[$i])
+                {
+                    $VMPrimaryIpConfiguration = $VMNetworkInterfaces[$i].IpConfigurations | Where-Object -FilterScript {$_.Primary -eq $true} | Get-Unique
+                    $VMObject | Add-Member -MemberType NoteProperty -Name "NIC $($i+1)" -Value $(Get-ChildObject -Object $VMNetworkInterfaces[$i] -Path Name)
+                    $VMObject | Add-Member -MemberType NoteProperty -Name "NIC $($i+1) Primary NIC" -Value $(Get-ChildObject -Object $VMNetworkInterfaces[$i] -Path Primary)
+                    $VMObject | Add-Member -MemberType NoteProperty -Name "NIC $($i+1) Accelerated Networking" -Value $(Get-ChildObject -Object $VMNetworkInterfaces[$i] -Path EnableAcceleratedNetworking)
+                    $VMObject | Add-Member -MemberType NoteProperty -Name "NIC $($i+1) Primary Config" -Value $(Get-ChildObject -Object $VMPrimaryIpConfiguration -Path Name)
+                    $VMObject | Add-Member -MemberType NoteProperty -Name "NIC $($i+1) Primary Config IP" -Value $(Get-ChildObject -Object $VMPrimaryIpConfiguration -Path PrivateIpAddress)
+                    $VMObject | Add-Member -MemberType NoteProperty -Name "NIC $($i+1) Primary Config Allocation" -Value $(Get-ChildObject -Object $VMPrimaryIpConfiguration -Path PrivateIpAllocationMethod)
+                    $VMObject | Add-Member -MemberType NoteProperty -Name "NIC $($i+1) VNET" -Value $((Get-ChildObject -Object $VMPrimaryIpConfiguration -Path Subnet.Id).Split("/")[8])
+                    $VMObject | Add-Member -MemberType NoteProperty -Name "NIC $($i+1) Subnet" -Value $((Get-ChildObject -Object $VMPrimaryIpConfiguration -Path Subnet.Id).Split("/")[10])
+                }
+                else
+                {
+                    $VMObject | Add-Member -MemberType NoteProperty -Name "NIC $($i+1)" -Value $null
+                    $VMObject | Add-Member -MemberType NoteProperty -Name "NIC $($i+1) Primary NIC" -Value $null
+                    $VMObject | Add-Member -MemberType NoteProperty -Name "NIC $($i+1) Accelerated Networking" -Value $null
+                    $VMObject | Add-Member -MemberType NoteProperty -Name "NIC $($i+1) Primary Config" -Value $null
+                    $VMObject | Add-Member -MemberType NoteProperty -Name "NIC $($i+1) Primary Config IP" $null
+                    $VMObject | Add-Member -MemberType NoteProperty -Name "NIC $($i+1) Primary Config Allocation" -Value $null
+                    $VMObject | Add-Member -MemberType NoteProperty -Name "NIC $($i+1) VNET" -Value $null
+                    $VMObject | Add-Member -MemberType NoteProperty -Name "NIC $($i+1) Subnet" -Value $null
+                }
+            }
 
             # Get all the Tags for this VM
             foreach($Tag in $Tags)
@@ -279,8 +303,7 @@ foreach ($Subscription in $Subscriptions)
                 }
             }
 
-            # Loop through each Azure Location to retrieve a list of VM sizes with the same number of vCPUs, memory & data disks, to which this VM can be upgraded
-            #$VMAvailableSizes = Get-AzureRmVMSize -ResourceGroupName $VM.ResourceGroupName -VMName $VM.Name | Where-Object -FilterScript {$_.NumberOfCores -ge $VMSize.NumberOfCores -and $_.Name -match "^Standard_[DEFM].*(s_v3|s)$"} 
+            # Loop through each Azure Location to retrieve a list of Dv3/DSv3, Ev3/ESv3, FSv2 or M series VM to which this VM can be upgraded
             $VMAvailableSizes = Get-AzureRmVMSize -ResourceGroupName $VM.ResourceGroupName -VMName $VM.Name | Where-Object {$_.Name -match "^Standard_[DEFM].*(s_v3|s)$"}
             if($VMAvailableSizes)
             {
