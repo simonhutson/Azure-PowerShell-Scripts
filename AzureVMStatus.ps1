@@ -394,7 +394,7 @@ foreach ($Subscription in $Subscriptions)
     # Output to a CSV file on the user's Desktop
     Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Appending details of Classic Virtual Machines in Subscription: $($Subscription.Name) to file"
     $FilePath = "$env:HOMEDRIVE$env:HOMEPATH\Desktop\Azure VM Status $($DateTime) (Classic).csv"
-    if($VMObjects){$VMObjects | Export-Csv -Path $FilePath -NoTypeInformation}
+    if($VMObjects){$VMObjects | Export-Csv -Path $FilePath -Append -NoTypeInformation}
 
     Write-Host
 
