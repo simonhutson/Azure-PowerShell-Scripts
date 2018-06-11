@@ -125,7 +125,7 @@ $A5 = New-Object PSObject -Property @{
         Name = "A5"
         NumberofCores = 2
         MemoryInMB = 14336
-        MaxDiskCount = 4}
+        MaxDataDiskCount = 4}
 $VMSizes += $A5
 $A6 = New-Object PSObject -Property @{            
         Name = "A6"
@@ -186,12 +186,13 @@ foreach($Subscription in $Subscriptions)
 $Tags = $Tags | Select-Object -Unique Name
 Write-Host
 
-# Create an empty Array to hold our custom VM objects
-$VMObjects = @()
-
 # Loop through each Subscription
 foreach ($Subscription in $Subscriptions)
 {
+
+    # Create an empty Array to hold our custom VM objects
+    $VMObjects = @()
+
     # Set the current Azure context
     Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Setting context for Subscription: $($Subscription.Name)"
     $Context = Set-AzureRmContext -SubscriptionId $Subscription -TenantId $Account.Context.Tenant.Id
@@ -199,7 +200,7 @@ foreach ($Subscription in $Subscriptions)
 
     # Get all the ARM VMs in the current Subscription
     Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Retrieving list of ARM Virtual Machines in Subscription: $($Subscription.Name)"
-    $VMs = Find-AzureRmResource -ResourceType Microsoft.Compute/virtualMachines -ExpandProperties
+    $VMs = Get-AzureRmResource -ResourceType Microsoft.Compute/virtualMachines -ExpandProperties
     Write-Host
 
     Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Retrieving status of ARM Virtual Machines in Subscription: $($Subscription.Name)"
@@ -320,22 +321,26 @@ foreach ($Subscription in $Subscriptions)
         }
         Write-Host
     }
-}
 
-# Output to a CSV file on the user's Desktop
-$FilePath = "$env:HOMEDRIVE$env:HOMEPATH\Desktop\Azure VM Status $($DateTime) (ARM).csv"
-if($VMObjects){$VMObjects | Export-Csv -Path $FilePath -NoTypeInformation}
+    # Append to a CSV file on the user's Desktop
+    Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Appending details of ARM Virtual Machines in Subscription: $($Subscription.Name) to file"
+    $FilePath = "$env:HOMEDRIVE$env:HOMEPATH\Desktop\Azure VM Status $($DateTime) (ARM).csv"
+    if($VMObjects){$VMObjects | Export-Csv -Path $FilePath -Append -NoTypeInformation}
+
+    Write-Host
+
+}
 
 #endregion
 
 #region Classic VM Details
 
-# Create an empty Array to hold our custom VM objects
-$VMObjects = @()
-
 # Loop through each Subscription
 foreach ($Subscription in $Subscriptions)
 {
+
+    # Create an empty Array to hold our custom VM objects
+    $VMObjects = @()
 
     # Set the current Azure context
     Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Setting context for Subscription: $($Subscription.Name)"
@@ -344,7 +349,7 @@ foreach ($Subscription in $Subscriptions)
 
     # Get all the Classic VMs in the current Subscription
     Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Retrieving list of Classic Virtual Machines in Subscription: $($Subscription.Name)"
-    $VMs = Find-AzureRmResource -ResourceType Microsoft.ClassicCompute/virtualMachines -ExpandProperties
+    $VMs = Get-AzureRmResource -ResourceType Microsoft.ClassicCompute/virtualMachines -ExpandProperties
     Write-Host
 
     if($VMs)
@@ -383,12 +388,16 @@ foreach ($Subscription in $Subscriptions)
             $VMObjects += $VMObject
             Write-Host -NoNewline "."
         }
+        Write-Host
     }
-    Write-Host
-}
+    
+    # Output to a CSV file on the user's Desktop
+    Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Appending details of Classic Virtual Machines in Subscription: $($Subscription.Name) to file"
+    $FilePath = "$env:HOMEDRIVE$env:HOMEPATH\Desktop\Azure VM Status $($DateTime) (Classic).csv"
+    if($VMObjects){$VMObjects | Export-Csv -Path $FilePath -NoTypeInformation}
 
-# Output to a CSV file on the user's Desktop
-$FilePath = "$env:HOMEDRIVE$env:HOMEPATH\Desktop\Azure VM Status $($DateTime) (Classic).csv"
-if($VMObjects){$VMObjects | Export-Csv -Path $FilePath -NoTypeInformation}
+    Write-Host
+
+}
 
 #endregion
