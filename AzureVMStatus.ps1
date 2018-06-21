@@ -59,15 +59,21 @@ Write-Host
 # Get the list of Azure AD Tenants this user has access to, and select the correct one
 Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Retrieving list of Azure AD Tenants for this User"
 $Tenants = Get-AzureRmTenant
+Write-Host
+
+# Get the list of Azure AD Tenants this user has access to, and select the correct one
 if($Tenants.Count -gt 1) # User has access to more than one Azure AD Tenant
 {
-    $Tenant = $Tenants | select-object -property Id | Out-GridView -Title "Select the Azure AD Tenant you wish to use..." -PassThru
+    $Tenant = $Tenants |  Out-GridView -Title "Select the Azure AD Tenant you wish to use..." -OutputMode Single
 }
-else # User has access to only one Azure AD Tenant
+elseif($Tenants.Count -eq 1) # User has access to only one Azure AD Tenant
 {
     $Tenant = $Tenants.Item(0)
 }
-Write-Host
+else # User has access to no Azure AD Tenant
+{
+    return
+}
 
 # Get Authentication Token, just in case it is required in future
 $TokenCache = (Get-AzureRmContext).TokenCache
@@ -76,10 +82,32 @@ $Token = $TokenCache.ReadItems() | Where-Object { $_.TenantId -eq $Tenant.Id }
 # Check if the current Azure AD Tenant is the required Tenant
 if($Account.Context.Tenant.Id -ne $Tenant.Id)
 {
-    # Login to the correct Azure AD Tenant
+    # Login to the required Azure AD Tenant
     Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Login to correct Azure AD Tenant"
     $Account = Add-AzureRmAccount -TenantId $Tenant.Id
     Write-Host
+}
+
+#endregion
+
+#region Select subscriptions
+
+# Get list of Subscriptions associated with this Azure AD Tenant, for which this User has access
+Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Retrieving list of Azure Subscriptions for this Azure AD Tenant"
+$AllSubscriptions = Get-AzureRmSubscription -TenantId $Tenant.Id
+Write-Host
+
+if($AllSubscriptions.Count -gt 1) # User has access to more than one Azure Subscription
+{
+    $Subscriptions = $AllSubscriptions |  Out-GridView -Title "Select the Azure Subscriptions you wish to use..." -OutputMode Multiple
+}
+elseif($AllSubscriptions.Count -eq 1) # User has access to only one Azure Subscription
+{
+    $Subscriptions = $AllSubscriptions.Item(0)
+}
+else # User has access to no Azure Subscription
+{
+    exit
 }
 
 #endregion
@@ -169,11 +197,6 @@ Write-Host
 #endregion
 
 #region ARM VM Details
-
-# Get list of Subscriptions associated with this Azure AD Tenant, for which this User has access
-Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Retrieving list of Azure Subscriptions for this Azure AD Tenant"
-$Subscriptions = Get-AzureRmSubscription -TenantId $Tenant.Id
-Write-Host
 
 # Loop through each Subscription to retireve a complete list of all the ARM Tags in use across all Subscriptions
 Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Retrieving list of Tags in use across all Subscriptions"
