@@ -72,7 +72,7 @@ elseif($Tenants.Count -eq 1) # User has access to only one Azure AD Tenant
 }
 else # User has access to no Azure AD Tenant
 {
-    return
+    Return
 }
 
 # Get Authentication Token, just in case it is required in future
@@ -107,7 +107,7 @@ elseif($AllSubscriptions.Count -eq 1) # User has access to only one Azure Subscr
 }
 else # User has access to no Azure Subscription
 {
-    exit
+    Return
 }
 
 #endregion
