@@ -58,7 +58,7 @@ Write-Host
 
 # Get the list of Azure AD Tenants this user has access to, and select the correct one
 Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Retrieving list of Azure AD Tenants for this User"
-$Tenants = Get-AzureRmTenant
+$Tenants = @(Get-AzureRmTenant)
 Write-Host
 
 # Get the list of Azure AD Tenants this user has access to, and select the correct one
@@ -94,16 +94,16 @@ if($Account.Context.Tenant.Id -ne $Tenant.Id)
 
 # Get list of Subscriptions associated with this Azure AD Tenant, for which this User has access
 Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Retrieving list of Azure Subscriptions for this Azure AD Tenant"
-$AllSubscriptions = Get-AzureRmSubscription -TenantId $Tenant.Id
+$Subscriptions = @(Get-AzureRmSubscription -TenantId $Tenant.Id)
 Write-Host
 
-if($AllSubscriptions.Count -gt 1) # User has access to more than one Azure Subscription
+if($Subscriptions.Count -gt 1) # User has access to more than one Azure Subscription
 {
-    $Subscriptions = $AllSubscriptions |  Out-GridView -Title "Select the Azure Subscriptions you wish to use..." -OutputMode Multiple
+    $Subscriptions = $Subscriptions |  Out-GridView -Title "Select the Azure Subscriptions you wish to use..." -OutputMode Multiple
 }
-elseif($AllSubscriptions.Count -eq 1) # User has access to only one Azure Subscription
+elseif($Subscriptions.Count -eq 1) # User has access to only one Azure Subscription
 {
-    $Subscriptions = $AllSubscriptions.Item(0)
+    $Subscriptions = @($Subscriptions.Item(0))
 }
 else # User has access to no Azure Subscription
 {
@@ -111,7 +111,6 @@ else # User has access to no Azure Subscription
 }
 
 #endregion
-
 
 #region Get VM Sizes
 
