@@ -114,9 +114,9 @@ else # User has access to no Azure Subscription
 
 #region Get VM Sizes
 
-# Get list of Azure Locations associated with this Azure AD Tenant, for which this User has access
+# Get list of Azure Locations associated with this Azure AD Tenant, for which this User has access and that support VMs
 Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Retrieving list of Azure locations"
-$Locations = Get-AzureRmLocation
+$Locations = Get-AzureRmLocation | where {$_.Providers -eq "Microsoft.Compute"}
 Write-Host
 
 # Loop through each Azure Location to retrieve a complete list of VM Sizes
@@ -124,10 +124,14 @@ Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Retrieving list of
 $VMSizes =@()
 foreach($Location in $Locations)
 {
-    if($Location.Providers.Contains("Microsoft.Compute"))
+    try
     {
         $VMSizes += Get-AzureRmVMSize -Location $Location.Location
         Write-Host -NoNewline "."
+    }
+    catch
+    {
+        #Do Nothing
     }
 }
 
