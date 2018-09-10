@@ -7,6 +7,14 @@
 #       >Install-Module AzureRM -AllowClobber -Force -Confirm
 #       >Set-ExecutionPolicy RemoteSigned -Confirm -Force
 #
+# NOTE: Download latest version of Chocolatey package manager for Windows
+#
+#       >https://chocolatey.org/install
+#
+# NOTE: Download latest version of ArmClient
+#
+#       >https://chocolatey.org/packages/ARMClient
+#
 ###############################################################################################################################
 
 #region Function Get-ChildObject
@@ -229,14 +237,22 @@ foreach ($Subscription in $Subscriptions)
     $VMs = Get-AzureRmResource -ResourceType Microsoft.Compute/virtualMachines -ExpandProperties
     Write-Host
 
+    # Get the status of all the ARM VMs in the current Subscription
     Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Retrieving status of ARM Virtual Machines in Subscription: $($Subscription.Name)"
     $VMStatuses = Get-AzureRmVM -Status
     Write-Host
 
+    # Get the created & last updated date/time of all the ARM VMs in the current Subscription
+    Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Retrieving created & last updated date/time of ARM Virtual Machines in Subscription: $($Subscription.Name)"
+    $VMDates = armclient GET "https://management.azure.com/subscriptions/$($Subscription.Id)/resources?`$filter=resourcetype eq 'Microsoft.Compute/virtualMachines'&`$expand=createdTime,changedTime&api-version=2018-08-01" | ConvertFrom-Json | Select -ExpandProperty value
+    Write-Host
+
+    # Get all the ARM Network Interfaces in the current Subscription
     Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Retrieving list of ARM Network Interfaces in Subscription: $($Subscription.Name)"
     $NetworkInterfaces = Get-AzureRmNetworkInterface
     Write-Host
 
+    # Get all the ARM Public IPs in the current Subscription
     Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Retrieving list of ARM Public IPs in Subscription: $($Subscription.Name)"
     $PublicIpAddresses = Get-AzureRmPublicIpAddress
     Write-Host
@@ -251,13 +267,18 @@ foreach ($Subscription in $Subscriptions)
             $VMNetworkInterfaces = $NetworkInterfaces | Where-Object -FilterScript {$_.VirtualMachine.Id -eq $VM.ResourceId}
 
             # Get the Status for this ARM VM
-            $VMStatus = $VMStatuses | Where-Object -FilterScript {$_.Id -eq $VM.ResourceId} | Get-Unique
+            $VMStatus = $VMStatuses | Where-Object {$_.Id -eq $VM.ResourceId} | Get-Unique
+
+            # Get the Created & Last Updated Date/Time for this ARM VM
+            $VMDate = $VMDates | Where-Object {$_.id -eq $VM.ResourceId} | Get-Unique
 
             # Lookup the VM Size information for this ARM VM
             $VMSize = $VMSizes | Where-Object {$_.Name -eq $(Get-ChildObject -Object $VM -Path Properties.hardwareProfile.vmSize)}
 
             # Create a custom PowerShell object to hold the consolidated ARM VM information
             $VMObject = New-Object PSObject
+            $VMObject | Add-Member -MemberType NoteProperty -Name "Created On" -Value $([DateTime]::Parse($(Get-ChildObject -Object $VMDate -Path createdTime)).ToUniversalTime())
+            $VMObject | Add-Member -MemberType NoteProperty -Name "Modified On" -Value $([DateTime]::Parse($(Get-ChildObject -Object $VMDate -Path changedTime)).ToUniversalTime())
             $VMObject | Add-Member -MemberType NoteProperty -Name "Subscription" -Value $(Get-ChildObject -Object $Subscription -Path Name)
             $VMObject | Add-Member -MemberType NoteProperty -Name "Resource Group" -Value $(Get-ChildObject -Object $VM -Path ResourceGroupName)
             $VMObject | Add-Member -MemberType NoteProperty -Name "VM Type" -Value "ARM"
