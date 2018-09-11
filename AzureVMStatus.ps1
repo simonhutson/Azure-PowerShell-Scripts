@@ -200,7 +200,7 @@ Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Retrieving list of
 $Tags = @()
 foreach($Subscription in $Subscriptions)
 {
-    Set-AzureRmContext -SubscriptionId $Subscription -TenantId $Account.Context.Tenant.Id
+    $Context = Set-AzureRmContext -SubscriptionId $Subscription -TenantId $Account.Context.Tenant.Id
     $Tags += Get-AzureRmTag
     Write-Host -NoNewline "."
 }
