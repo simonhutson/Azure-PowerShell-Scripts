@@ -122,25 +122,32 @@ else # User has access to no Azure Subscription
 
 #region Get VM Sizes
 
-# Get list of Azure Locations associated with this Azure AD Tenant, for which this User has access and that support VMs
-Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Retrieving list of Azure locations"
-$Locations = Get-AzureRmLocation | where {$_.Providers -eq "Microsoft.Compute"}
-Write-Host
-
-# Loop through each Azure Location to retrieve a complete list of VM Sizes
-Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Retrieving list of Azure VM Sizes across all locations"
-$VMSizes =@()
-foreach($Location in $Locations)
+$VMSizes = @()
+Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Retrieving list of Azure VM Sizes across all subscriptions and all locations"
+foreach($Subscription in $Subscriptions)
 {
-    try
+
+    $Context = Set-AzureRmContext -SubscriptionId $Subscription -TenantId $Account.Context.Tenant.Id
+
+    # Get list of Azure Locations associated with this Subscription, for which this User has access and that support VMs
+    $Locations = Get-AzureRmLocation | where {$_.Providers -eq "Microsoft.Compute"}
+
+    # Loop through each Azure Location to retrieve a complete list of VM Sizes
+    foreach($Location in $Locations)
     {
-        $VMSizes += Get-AzureRmVMSize -Location $Location.Location
-        Write-Host -NoNewline "."
+        try
+        {
+            $VMSizes += Get-AzureRmVMSize -Location $Location.Location | Select-Object Name, NumberOfCores, MemoryInMB, MaxDataDiskCount
+            #$VMSizes += armclient GET https://management.azure.com/subscriptions/$($Subscription.Id)/providers/Microsoft.Compute/locations/$($Location.Location)/vmSizes?api-version=2017-12-01 | ConvertFrom-Json | Select -ExpandProperty value
+            Write-Host -NoNewline "."
+        }
+        catch
+        {
+            #Do Nothing
+        }
     }
-    catch
-    {
-        #Do Nothing
-    }
+    $VMSizes = $VMSizes | Select-Object -Unique Name, NumberOfCores, MemoryInMB, MaxDataDiskCount
+    Write-Host
 }
 
 # For some reason, Azure doesn't report these VM sizes, so we need to create them manually
@@ -159,49 +166,28 @@ $VMSizes += $Large
 $ExtraLarge = ($VMSizes | Where-Object {$_.Name -eq "Basic_A4"} | Get-Unique).PSObject.Copy()
 $ExtraLarge.Name = "ExtraLarge"
 $VMSizes += $ExtraLarge
-
-$A5 = New-Object PSObject -Property @{            
-        Name = "A5"
-        NumberofCores = 2
-        MemoryInMB = 14336
-        MaxDataDiskCount = 4}
+$A5 = ($VMSizes | Where-Object {$_.Name -eq "Standard_A5"} | Get-Unique).PSObject.Copy()
+$A5.Name = "A5"
 $VMSizes += $A5
-$A6 = New-Object PSObject -Property @{            
-        Name = "A6"
-        NumberofCores = 4
-        MemoryInMB = 28672
-        MaxDataDiskCount = 8} 
+$A6 = ($VMSizes | Where-Object {$_.Name -eq "Standard_A6"} | Get-Unique).PSObject.Copy()
+$A6.Name = "A6"
 $VMSizes += $A6
-$A7 = New-Object PSObject -Property @{            
-        Name = "A7"
-        NumberofCores = 8
-        MemoryInMB = 57344
-        MaxDataDiskCount = 16} 
+$A7 = ($VMSizes | Where-Object {$_.Name -eq "Standard_A7"} | Get-Unique).PSObject.Copy()
+$A7.Name = "A7"
 $VMSizes += $A7
-$A8 = New-Object PSObject -Property @{            
-        Name = "A8"
-        NumberofCores = 8
-        MemoryInMB = 57344
-        MaxDataDiskCount = 16}
+$A8 = ($VMSizes | Where-Object {$_.Name -eq "Standard_A8"} | Get-Unique).PSObject.Copy()
+$A8.Name = "A8"
 $VMSizes += $A8
-$A9 = New-Object PSObject -Property @{            
-        Name = "A9"
-        NumberofCores = 16
-        MemoryInMB = 114688
-        MaxDataDiskCount = 32}
+$A9 = ($VMSizes | Where-Object {$_.Name -eq "Standard_A9"} | Get-Unique).PSObject.Copy()
+$A9.Name = "A9"
 $VMSizes += $A9
-$A10 = New-Object PSObject -Property @{            
-        Name = "A10"
-        NumberofCores = 8
-        MemoryInMB = 57344
-        MaxDataDiskCount = 16}
+$A10 = ($VMSizes | Where-Object {$_.Name -eq "Standard_A10"} | Get-Unique).PSObject.Copy()
+$A10.Name = "A10"
 $VMSizes += $A10
-$A11 = New-Object PSObject -Property @{            
-        Name = "A11"
-        NumberofCores = 16
-        MemoryInMB = 114688
-        MaxDataDiskCount = 32}
+$A11 = ($VMSizes | Where-Object {$_.Name -eq "Standard_A11"} | Get-Unique).PSObject.Copy()
+$A11.Name = "A11"
 $VMSizes += $A11
+
 $VMSizes = $VMSizes | Select-Object -Unique Name, NumberOfCores, MemoryInMB, MaxDataDiskCount
 Write-Host
 
@@ -214,6 +200,7 @@ Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Retrieving list of
 $Tags = @()
 foreach($Subscription in $Subscriptions)
 {
+    Set-AzureRmContext -SubscriptionId $Subscription -TenantId $Account.Context.Tenant.Id
     $Tags += Get-AzureRmTag
     Write-Host -NoNewline "."
 }
