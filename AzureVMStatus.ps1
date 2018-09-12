@@ -447,6 +447,11 @@ foreach ($Subscription in $SelectedSubscriptions)
     $VMs = Get-AzureRmResource -ResourceType Microsoft.ClassicCompute/virtualMachines -ExpandProperties
     Write-Host
 
+    # Get the created & last updated date/time of all the ARM VMs in the current Subscription
+    Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Retrieving created & last updated date/time of Classic Virtual Machines in Subscription: $($Subscription.Name)"
+    $VMDates = armclient GET "https://management.azure.com/subscriptions/$($Subscription.Id)/resources?`$filter=resourcetype eq 'Microsoft.ClassicCompute/virtualMachines'&`$expand=createdTime,changedTime&api-version=2018-08-01" | ConvertFrom-Json | Select -ExpandProperty value
+    Write-Host
+
     # Create an empty Array to hold our custom VM objects
     $VMObjects = [PSCustomObject]@()
 
@@ -458,6 +463,10 @@ foreach ($Subscription in $SelectedSubscriptions)
 
             # Lookup the VM Size information for this ARM VM
             $VMSize = $VMSizes | Where-Object {$_.Name -eq $(Get-ChildObject -Object $VM -Path Properties.hardwareProfile.size)}
+
+            # Get the Created & Last Updated Date/Time for this ARM VM
+            $VMDate = $VMDates | Where-Object {$_.id -eq $VM.ResourceId} | Get-Unique
+
 
             # Create a custom PowerShell object to hold the consolidated Classic VM information
             #$VMObject = New-Object PSObject
@@ -483,6 +492,8 @@ foreach ($Subscription in $SelectedSubscriptions)
             #$VMObject | Add-Member -MemberType NoteProperty -Name "Private IP Address" -Value $(Get-ChildObject -Object $VM -Path Properties.instanceView.privateIpAddress)
 
             $VMHashTable = [Ordered]@{
+                "Created On" = $([DateTime]::Parse($(Get-ChildObject -Object $VMDate -Path createdTime)).ToUniversalTime())
+                "Modified On" = $([DateTime]::Parse($(Get-ChildObject -Object $VMDate -Path changedTime)).ToUniversalTime())
                 "Subscription" = $(Get-ChildObject -Object $Subscription -Path Name)
                 "Resource Group" = $(Get-ChildObject -Object $VM -Path ResourceGroupName)
                 "VM Type" = "Classic"
@@ -499,10 +510,13 @@ foreach ($Subscription in $SelectedSubscriptions)
                 "OS Disk Caching" = $(Get-ChildObject -Object $VM -Path Properties.storageProfile.operatingSystemDisk.caching)
                 "OS Disk IO Type" = $(Get-ChildObject -Object $VM -Path Properties.storageProfile.operatingSystemDisk.ioType)
                 "OS Disk Source Image Name" = $(Get-ChildObject -Object $VM -Path Properties.storageProfile.operatingSystemDisk.sourceImageName)
-                "OS Disk Storage Account" = $(if($(Get-ChildObject -Object $VM -Path Properties.storageProfile.operatingSystemDisk.vhduri) -ne ""){([System.Uri]$(Get-ChildObject -Object $VM -Path Properties.storageProfile.operatingSystemDisk.vhduri)).Host}else{""}) -Force
+                "OS Disk Storage Account" = $(if($(Get-ChildObject -Object $VM -Path Properties.storageProfile.operatingSystemDisk.vhduri) -ne ""){([System.Uri]$(Get-ChildObject -Object $VM -Path Properties.storageProfile.operatingSystemDisk.vhduri)).Host}else{""})
                 "Data Disk Count" = $(Get-ChildObject -Object $VM -Path Properties.storageProfile.dataDisks.Count)
                 "Data Disk Max Count" = $(Get-ChildObject -Object $VMSize -Path MaxDataDiskCount)
                 "Private IP Address" = $(Get-ChildObject -Object $VM -Path Properties.instanceView.privateIpAddress)
+                "Public IP Address" = $(Get-ChildObject -Object $VM -Path Properties.instanceView.publicIpAddresses[0])
+                "VNET" = $(Get-ChildObject -Object $VM -Path Properties.networkProfile.virtualNetwork.name)
+                "Subnet" = $(Get-ChildObject -Object $VM -Path Properties.networkProfile.virtualNetwork.subnetNames[0])
             }
 
 
