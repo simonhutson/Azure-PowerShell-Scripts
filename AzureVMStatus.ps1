@@ -125,7 +125,7 @@ else # User has access to no Azure Subscription
 $VMSizes = @()
 Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Retrieving list of Azure VM Sizes across all locations"
 
-$Context = Set-AzureRmContext -SubscriptionId $Subscription -TenantId $Account.Context.Tenant.Id
+#$Context = Set-AzureRmContext -SubscriptionId $Subscription.Id -TenantId $Account.Context.Tenant.Id
 
 # Get list of Azure Locations associated with this Subscription, for which this User has access and that support VMs
 $Locations = Get-AzureRmLocation | where {$_.Providers -eq "Microsoft.Compute"}
@@ -301,8 +301,8 @@ foreach ($Subscription in $SelectedSubscriptions)
 
 
             $VMHashTable = [Ordered]@{
-                "Created On" = $([DateTime]::Parse($(Get-ChildObject -Object $VMDate -Path createdTime)).ToUniversalTime())
-                "Modified On" = $([DateTime]::Parse($(Get-ChildObject -Object $VMDate -Path changedTime)).ToUniversalTime())
+                "Created On" = $(if(Get-ChildObject -Object $VMDate -Path createdTime){[DateTime]::Parse($(Get-ChildObject -Object $VMDate -Path createdTime)).ToUniversalTime()})
+                "Modified On" = $(if(Get-ChildObject -Object $VMDate -Path changedTime){[DateTime]::Parse($(Get-ChildObject -Object $VMDate -Path changedTime)).ToUniversalTime()})
                 "Subscription" = $(Get-ChildObject -Object $Subscription -Path Name)
                 "Resource Group" = $(Get-ChildObject -Object $VM -Path ResourceGroupName)
                 "VM Type" = "ARM"
