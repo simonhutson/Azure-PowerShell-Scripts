@@ -238,10 +238,10 @@ foreach ($Subscription in $SelectedSubscriptions)
     $NetworkInterfaces = Get-AzureRmNetworkInterface
     Write-Host
 
-    # Get all the ARM Public IPs in the current Subscription
-    Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Retrieving list of ARM Public IPs in Subscription: $($Subscription.Name)"
-    $PublicIpAddresses = Get-AzureRmPublicIpAddress
-    Write-Host
+    # TO BE COMPLETED: Get all the ARM Public IPs in the current Subscription
+    #Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Retrieving list of ARM Public IPs in Subscription: $($Subscription.Name)"
+    #$PublicIpAddresses = Get-AzureRmPublicIpAddress
+    #Write-Host
 
     # Create an empty Array to hold our custom VM objects
     $VMObjects = [PSCustomObject]@()
@@ -265,41 +265,6 @@ foreach ($Subscription in $SelectedSubscriptions)
             $VMSize = $VMSizes | Where-Object {$_.Name -eq $(Get-ChildObject -Object $VM -Path Properties.hardwareProfile.vmSize)}
 
             # Create a custom PowerShell object to hold the consolidated ARM VM information
-            #$VMObject = New-Object PSObject
-            #$VMObject | Add-Member -MemberType NoteProperty -Name "Created On" -Value $([DateTime]::Parse($(Get-ChildObject -Object $VMDate -Path createdTime)).ToUniversalTime())
-            #$VMObject | Add-Member -MemberType NoteProperty -Name "Modified On" -Value $([DateTime]::Parse($(Get-ChildObject -Object $VMDate -Path changedTime)).ToUniversalTime())
-            #$VMObject | Add-Member -MemberType NoteProperty -Name "Subscription" -Value $(Get-ChildObject -Object $Subscription -Path Name)
-            #$VMObject | Add-Member -MemberType NoteProperty -Name "Resource Group" -Value $(Get-ChildObject -Object $VM -Path ResourceGroupName)
-            #$VMObject | Add-Member -MemberType NoteProperty -Name "VM Type" -Value "ARM"
-            #$VMObject | Add-Member -MemberType NoteProperty -Name "VM Name" -Value $(Get-ChildObject -Object $VM -Path Name)
-            #$VMObject | Add-Member -MemberType NoteProperty -Name "VM Location" -Value $(Get-ChildObject -Object $VM -Path Location)
-            #$VMObject | Add-Member -MemberType NoteProperty -Name "VM Size" -Value $(Get-ChildObject -Object $VM -Path Properties.hardwareProfile.vmSize)
-            #$VMObject | Add-Member -MemberType NoteProperty -Name "VM Processor Cores" -Value $(Get-ChildObject -Object $VMSize -Path NumberofCores)
-            #$VMObject | Add-Member -MemberType NoteProperty -Name "VM Memory (GB)" -Value $([INT]$(Get-ChildObject -Object $VMSize -Path MemoryInMB)/1024)
-            #$VMObject | Add-Member -MemberType NoteProperty -Name "Availability Set" -Value $((Get-ChildObject -Object $VM -Path Properties.availabilitySet.id).Split("/")[8])
-            #$VMObject | Add-Member -MemberType NoteProperty -Name "VM ID" -Value $(Get-ChildObject -Object $VM -Path Properties.VmId)
-            #$VMObject | Add-Member -MemberType NoteProperty -Name "Power State" -Value $(Get-ChildObject -Object $VMStatus -Path PowerState)
-            #$VMObject | Add-Member -MemberType NoteProperty -Name "Provisioning State" -Value $(Get-ChildObject -Object $VMStatus -Path ProvisioningState)
-            #$VMObject | Add-Member -MemberType NoteProperty -Name "Status Code" -Value $(Get-ChildObject -Object $VMStatus -Path StatusCode)
-            #$VMObject | Add-Member -MemberType NoteProperty -Name "Maintenance - Self Service Window" -Value $(if(Get-ChildObject -Object $VMStatus -Path MaintenanceRedeployStatus){if((Get-ChildObject -Object $VMStatus -Path MaintenanceRedeployStatus.IsCustomerInitiatedMaintenanceAllowed) -eq $True){$(Get-ChildObject -Object $VMStatus -Path MaintenanceRedeployStatus.PreMaintenanceWindowStartTime).ToUniversalTime().ToString() + " - " + $(Get-ChildObject -Object $VMStatus -Path MaintenanceRedeployStatus.PreMaintenanceWindowEndTime).ToUniversalTime().ToString() + " UTC"}})
-            #$VMObject | Add-Member -MemberType NoteProperty -Name "Maintenance - Scheduled Window" -Value $(if(Get-ChildObject -Object $VMStatus -Path MaintenanceRedeployStatus){if((Get-ChildObject -Object $VMStatus -Path MaintenanceRedeployStatus.IsCustomerInitiatedMaintenanceAllowed) -eq $True){$(Get-ChildObject -Object $VMStatus -Path MaintenanceRedeployStatus.MaintenanceWindowStartTime).ToUniversalTime().ToString() + " - " + $(Get-ChildObject -Object $VMStatus -Path MaintenanceRedeployStatus.MaintenanceWindowEndTime).ToUniversalTime().ToString() + " UTC"}})
-            #$VMObject | Add-Member -MemberType NoteProperty -Name "Boot Diagnostics Enabled" -Value $(Get-ChildObject -Object $VM -Path Properties.DiagnosticsProfile.BootDiagnostics.Enabled)
-            #$VMObject | Add-Member -MemberType NoteProperty -Name "OS Type" -Value $(Get-ChildObject -Object $VM -Path Properties.storageProfile.osDisk.OsType)
-            #$VMObject | Add-Member -MemberType NoteProperty -Name "Windows Hybrid Benefit" -Value $(if((Get-ChildObject -Object $VM -Path Properties.StorageProfile.OsDisk.OsType) -eq "Windows"){if(Get-ChildObject -Object $VM -Path Properties.LicenseType){"Enabled"}else{"Not Enabled"}}else{"Not Supported"})
-            #$VMObject | Add-Member -MemberType NoteProperty -Name "Image Publisher" -Value $(Get-ChildObject -Object $VM -Path Properties.storageProfile.ImageReference.Publisher)
-            #$VMObject | Add-Member -MemberType NoteProperty -Name "Image Offer" -Value $(Get-ChildObject -Object $VM -Path Properties.storageProfile.ImageReference.Offer)
-            #$VMObject | Add-Member -MemberType NoteProperty -Name "Image Sku" -Value $(Get-ChildObject -Object $VM -Path Properties.storageProfile.ImageReference.Sku)
-            #$VMObject | Add-Member -MemberType NoteProperty -Name "Image Version" -Value $(Get-ChildObject -Object $VM -Path Properties.storageProfile.ImageReference.Version)
-            #$VMObject | Add-Member -MemberType NoteProperty -Name "OS Disk Size" -Value $(Get-ChildObject -Object $VM -Path Properties.storageProfile.osDisk.DiskSizeGB)
-            #$VMObject | Add-Member -MemberType NoteProperty -Name "OS Disk Caching" -Value $(Get-ChildObject -Object $VM -Path Properties.storageProfile.osDisk.Caching)
-            #$VMObject | Add-Member -MemberType NoteProperty -Name "OS Disk Type" -Value $(if(Get-ChildObject -Object $VM -Path Properties.storageProfile.osDisk.ManagedDisk){"Managed"}elseif(Get-ChildObject -Object $VM -Path Properties.storageProfile.osDisk.vhd){"Unmanaged"})
-            #$VMObject | Add-Member -MemberType NoteProperty -Name "OS Disk Storage Type" -Value $(Get-ChildObject -Object $VM -Path Properties.storageProfile.osDisk.ManagedDisk.StorageAccountType)
-            #$VMObject | Add-Member -MemberType NoteProperty -Name "OS Disk Storage Account" -Value $(if($(Get-ChildObject -Object $VM -Path Properties.storageProfile.osDisk.vhd.uri) -ne ""){([System.Uri]$(Get-ChildObject -Object $VM -Path Properties.storageProfile.osDisk.vhd.uri)).Host}else{""})
-            #$VMObject | Add-Member -MemberType NoteProperty -Name "Data Disk Count" -Value $(Get-ChildObject -Object $VM -Path Properties.storageProfile.dataDisks.Count)
-            #$VMObject | Add-Member -MemberType NoteProperty -Name "Data Disk Max Count" -Value $(Get-ChildObject -Object $VMSize -Path MaxDataDiskCount)
-            #$VMObject | Add-Member -MemberType NoteProperty -Name "NIC Count" -Value $(Get-ChildObject -Object $VM -Path Properties.networkProfile.networkInterfaces.Count)
-
-
             $VMHashTable = [Ordered]@{
                 "Created On" = $(if(Get-ChildObject -Object $VMDate -Path createdTime){[DateTime]::Parse($(Get-ChildObject -Object $VMDate -Path createdTime)).ToUniversalTime()})
                 "Modified On" = $(if(Get-ChildObject -Object $VMDate -Path changedTime){[DateTime]::Parse($(Get-ChildObject -Object $VMDate -Path changedTime)).ToUniversalTime()})
@@ -342,14 +307,6 @@ foreach ($Subscription in $SelectedSubscriptions)
                 if($VMNetworkInterfaces[$i])
                 {
                     $VMPrimaryIpConfiguration = $VMNetworkInterfaces[$i].IpConfigurations | Where-Object -FilterScript {$_.Primary -eq $true} | Get-Unique
-                    #$VMObject | Add-Member -MemberType NoteProperty -Name "NIC $($i+1)" -Value $(Get-ChildObject -Object $VMNetworkInterfaces[$i] -Path Name)
-                    #$VMObject | Add-Member -MemberType NoteProperty -Name "NIC $($i+1) Primary NIC" -Value $(Get-ChildObject -Object $VMNetworkInterfaces[$i] -Path Primary)
-                    #$VMObject | Add-Member -MemberType NoteProperty -Name "NIC $($i+1) Accelerated Networking" -Value $(Get-ChildObject -Object $VMNetworkInterfaces[$i] -Path EnableAcceleratedNetworking)
-                    #$VMObject | Add-Member -MemberType NoteProperty -Name "NIC $($i+1) Primary Config" -Value $(Get-ChildObject -Object $VMPrimaryIpConfiguration -Path Name)
-                    #$VMObject | Add-Member -MemberType NoteProperty -Name "NIC $($i+1) Primary Config IP" -Value $(Get-ChildObject -Object $VMPrimaryIpConfiguration -Path PrivateIpAddress)
-                    #$VMObject | Add-Member -MemberType NoteProperty -Name "NIC $($i+1) Primary Config Allocation" -Value $(Get-ChildObject -Object $VMPrimaryIpConfiguration -Path PrivateIpAllocationMethod)
-                    #$VMObject | Add-Member -MemberType NoteProperty -Name "NIC $($i+1) VNET" -Value $((Get-ChildObject -Object $VMPrimaryIpConfiguration -Path Subnet.Id).Split("/")[8])
-                    #$VMObject | Add-Member -MemberType NoteProperty -Name "NIC $($i+1) Subnet" -Value $((Get-ChildObject -Object $VMPrimaryIpConfiguration -Path Subnet.Id).Split("/")[10])
 
                     $NicHashTable = [Ordered]@{
                         "NIC $($i+1)" = $(Get-ChildObject -Object $VMNetworkInterfaces[$i] -Path Name)
@@ -398,7 +355,7 @@ foreach ($Subscription in $SelectedSubscriptions)
                 $VMHashTable += $TagHashTable
             }
 
-            # Retrieve a list of VM sizes to which this VM can be resized
+            # TO BE COMPLETED: Retrieve a list of VM sizes to which this VM can be resized
             #$VMAvailableSizes = Get-AzureRmVMSize -ResourceGroupName $VM.ResourceGroupName -VMName $VM.Name
             #if($VMAvailableSizes)
             #{
@@ -467,30 +424,7 @@ foreach ($Subscription in $SelectedSubscriptions)
             # Get the Created & Last Updated Date/Time for this ARM VM
             $VMDate = $VMDates | Where-Object {$_.id -eq $VM.ResourceId} | Get-Unique
 
-
             # Create a custom PowerShell object to hold the consolidated Classic VM information
-            #$VMObject = New-Object PSObject
-            #$VMObject | Add-Member -MemberType NoteProperty -Name "Subscription" -Value $(Get-ChildObject -Object $Subscription -Path Name)
-            #$VMObject | Add-Member -MemberType NoteProperty -Name "Resource Group" -Value $(Get-ChildObject -Object $VM -Path ResourceGroupName)
-            #$VMObject | Add-Member -MemberType NoteProperty -Name "VM Type" -Value "Classic"
-            #$VMObject | Add-Member -MemberType NoteProperty -Name "VM Name" -Value $(Get-ChildObject -Object $VM -Path Name)
-            #$VMObject | Add-Member -MemberType NoteProperty -Name "VM Location" -Value $(Get-ChildObject -Object $VM -Path Location)
-            #$VMObject | Add-Member -MemberType NoteProperty -Name "VM Size" -Value $(Get-ChildObject -Object $VM -Path Properties.hardwareProfile.size)
-            #$VMObject | Add-Member -MemberType NoteProperty -Name "VM Processor Cores" -Value $(Get-ChildObject -Object $VMSize -Path NumberofCores)
-            #$VMObject | Add-Member -MemberType NoteProperty -Name "VM Memory (GB)" -Value $([INT]$(Get-ChildObject -Object $VMSize -Path MemoryInMB)/1024)
-            #$VMObject | Add-Member -MemberType NoteProperty -Name "Status" -Value $(Get-ChildObject -Object $VM -Path Properties.instanceView.status)
-            #$VMObject | Add-Member -MemberType NoteProperty -Name "Power State" -Value $(Get-ChildObject -Object $VM -Path Properties.instanceView.powerState)
-            #$VMObject | Add-Member -MemberType NoteProperty -Name "Provisioning State" -Value $(Get-ChildObject -Object $VM -Path Properties.provisioningState)
-            #$VMObject | Add-Member -MemberType NoteProperty -Name "Boot Diagnostics Enabled" -Value $(Get-ChildObject -Object $VM -Path Properties.debugProfile.bootDiagnosticsEnabled)
-            #$VMObject | Add-Member -MemberType NoteProperty -Name "OS Type" -Value $(Get-ChildObject -Object $VM -Path Properties.storageProfile.operatingSystemDisk.operatingSystem)
-            #$VMObject | Add-Member -MemberType NoteProperty -Name "OS Disk Caching" -Value $(Get-ChildObject -Object $VM -Path Properties.storageProfile.operatingSystemDisk.caching)
-            #$VMObject | Add-Member -MemberType NoteProperty -Name "OS Disk IO Type" -Value $(Get-ChildObject -Object $VM -Path Properties.storageProfile.operatingSystemDisk.ioType)
-            #$VMObject | Add-Member -MemberType NoteProperty -Name "OS Disk Source Image Name" -Value $(Get-ChildObject -Object $VM -Path Properties.storageProfile.operatingSystemDisk.sourceImageName)
-            #$VMOBject | Add-Member -MemberType NoteProperty -Name "OS Disk Storage Account" -Value $(if($(Get-ChildObject -Object $VM -Path Properties.storageProfile.operatingSystemDisk.vhduri) -ne ""){([System.Uri]$(Get-ChildObject -Object $VM -Path Properties.storageProfile.operatingSystemDisk.vhduri)).Host}else{""}) -Force
-            #$VMObject | Add-Member -MemberType NoteProperty -Name "Data Disk Count" -Value $(Get-ChildObject -Object $VM -Path Properties.storageProfile.dataDisks.Count)
-            #$VMObject | Add-Member -MemberType NoteProperty -Name "Data Disk Max Count" -Value $(Get-ChildObject -Object $VMSize -Path MaxDataDiskCount)
-            #$VMObject | Add-Member -MemberType NoteProperty -Name "Private IP Address" -Value $(Get-ChildObject -Object $VM -Path Properties.instanceView.privateIpAddress)
-
             $VMHashTable = [Ordered]@{
                 "Created On" = $([DateTime]::Parse($(Get-ChildObject -Object $VMDate -Path createdTime)).ToUniversalTime())
                 "Modified On" = $([DateTime]::Parse($(Get-ChildObject -Object $VMDate -Path changedTime)).ToUniversalTime())
@@ -518,7 +452,6 @@ foreach ($Subscription in $SelectedSubscriptions)
                 "VNET" = $(Get-ChildObject -Object $VM -Path Properties.networkProfile.virtualNetwork.name)
                 "Subnet" = $(Get-ChildObject -Object $VM -Path Properties.networkProfile.virtualNetwork.subnetNames[0])
             }
-
 
             # Add the VM HashTable to the Custom Object Array
             $VMObjects += [PSCustomObject]$VMHashTable
