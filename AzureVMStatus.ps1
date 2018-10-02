@@ -5,6 +5,8 @@
 # NOTE: Download latest Azure and AzureAD Powershell modules, using the following PowerShell commands with elevated privileges
 #
 #       >Install-Module AzureRM -AllowClobber -Force -Confirm
+#       >Install-Module AzureAD -AllowClobber -Force -Confirm
+#       >Install-Module Az.ResourceGraph -AllowClobber -Force -Confirm
 #       >Set-ExecutionPolicy RemoteSigned -Confirm -Force
 #
 # NOTE: Download latest version of Chocolatey package manager for Windows

@@ -2,13 +2,25 @@
 #
 # Retrieve the status of all Azure Storage Accounts across selected Subscriptions associated with a specific Azure AD Tenant
 #
-# NOTE: Download latest Azure and AzureRM Powershell modules, using the following PowerShell commands with elevated privileges
+# Retrieve the status of all Azure Virtual Machines across all Subscriptions associated with a specific Azure AD Tenant
+#
+# NOTE: Download latest Azure and AzureAD Powershell modules, using the following PowerShell commands with elevated privileges
 #
 #       >Install-Module AzureRM -AllowClobber -Force -Confirm
-#       >Install-Module Azure -AllowClobber -Force -Confirm
+#       >Install-Module AzureAD -AllowClobber -Force -Confirm
+#       >Install-Module Az.ResourceGraph -AllowClobber -Force -Confirm
 #       >Set-ExecutionPolicy RemoteSigned -Confirm -Force
 #
+# NOTE: Download latest version of Chocolatey package manager for Windows
+#
+#       >https://chocolatey.org/install
+#
+# NOTE: Download latest version of ArmClient
+#
+#       >https://chocolatey.org/packages/ARMClient
+#
 ###############################################################################################################################
+
 
 #region Function Get-ChildObject
 
@@ -54,7 +66,7 @@ $DateTime = Get-Date -f 'yyyy-MM-dd HHmmss'
 
 # Login to the user's default Azure AD Tenant
 Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Login to User's default Azure AD Tenant"
-$Account = Connect-AzureRmAccount
+$Account = Add-AzureRmAccount
 Write-Host
 
 # Get the list of Azure AD Tenants this user has access to, and select the correct one
@@ -70,6 +82,10 @@ if($Tenants.Count -gt 1) # User has access to more than one Azure AD Tenant
 elseif($Tenants.Count -eq 1) # User has access to only one Azure AD Tenant
 {
     $Tenant = $Tenants.Item(0)
+}
+else # User has access to no Azure AD Tenant
+{
+    Return
 }
 
 # Get Authentication Token, just in case it is required in future
@@ -91,16 +107,16 @@ if($Account.Context.Tenant.Id -ne $Tenant.Id)
 
 # Get list of Subscriptions associated with this Azure AD Tenant, for which this User has access
 Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Retrieving list of Azure Subscriptions for this Azure AD Tenant"
-$Subscriptions = @(Get-AzureRmSubscription -TenantId $Tenant.Id)
+$AllSubscriptions = @(Get-AzureRmSubscription -TenantId $Tenant.Id)
 Write-Host
 
-if($Subscriptions.Count -gt 1) # User has access to more than one Azure Subscription
+if($AllSubscriptions.Count -gt 1) # User has access to more than one Azure Subscription
 {
-    $Subscriptions = $Subscriptions |  Out-GridView -Title "Select the Azure Subscriptions you wish to use..." -OutputMode Multiple
+    $SelectedSubscriptions = $AllSubscriptions |  Out-GridView -Title "Select the Azure Subscriptions you wish to use..." -OutputMode Multiple
 }
-elseif($Subscriptions.Count -eq 1) # User has access to only one Azure Subscription
+elseif($AllSubscriptions.Count -eq 1) # User has access to only one Azure Subscription
 {
-    $Subscriptions = @($Subscriptions.Item(0))
+    $SelectedSubscriptions = @($AllSubscriptions.Item(0))
 }
 else # User has access to no Azure Subscription
 {
@@ -112,78 +128,55 @@ else # User has access to no Azure Subscription
 #region ARM Storage Account details
 
 # Loop through each Subscription
-foreach ($Subscription in $Subscriptions)
+foreach ($Subscription in $SelectedSubscriptions)
 {
-
-    $StorageAccountObjects = @()
-
     # Set the current Azure context
     Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Setting context for Subscription: $($Subscription.Name)"
-    $Context = Set-AzureRmContext -SubscriptionId $Subscription.Id -TenantId $Account.Context.Tenant.Id
-    #$Context = Set-AzureRmContext -SubscriptionId a8d854f2-407b-4bbe-9575-11cc184a7aa3 -TenantId $Account.Context.Tenant.Id
+    $Context = Set-AzureRmContext -SubscriptionId $Subscription -TenantId $Account.Context.Tenant.Id
     Write-Host
 
     # Get all the ARM Storage Accounts in the current Subscription
     Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Retrieving list of ARM Storage Accounts in Subscription: $($Subscription.Name)"
     $StorageAccounts = Get-AzureRmResource -ResourceType Microsoft.Storage/storageAccounts -ExpandProperties
-    #$StorageAccounts = Get-AzureRmStorageAccount
-
     Write-Host
 
-    Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Creating custom list of Storage Accounts in Subscription: $($Subscription.Name)"              
+    Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Creating custom list of ARM Storage Accounts in Subscription: $($Subscription.Name)"              
+
+    # Create an empty Array to hold our custom VM objects
+    $StorageAccountObjects = [PSCustomObject]@()
 
     if($StorageAccounts)
     {
         foreach ($StorageAccount in $StorageAccounts)
         {
-            # Create a custom PowerShell object to hold the consolidated ARM VM information
-            $StorageAccountObject = New-Object PSObject
-            $StorageAccountObject | Add-Member -MemberType NoteProperty -Name "Subscription" -Value $($Subscription.Name)
-            $StorageAccountObject | Add-Member -MemberType NoteProperty -Name "Resource Group" -Value $(Get-ChildObject -Object $StorageAccount -Path ResourceGroupName)
-            #$StorageAccountObject | Add-Member -MemberType NoteProperty -Name "Storage Account" -Value $(Get-ChildObject -Object $StorageAccount -Path StorageAccountName)
-            $StorageAccountObject | Add-Member -MemberType NoteProperty -Name "Storage Account" -Value $(Get-ChildObject -Object $StorageAccount -Path ResourceName)
-            $StorageAccountObject | Add-Member -MemberType NoteProperty -Name "Location" -Value $(Get-ChildObject -Object $StorageAccount -Path Location)
-            #$StorageAccountObject | Add-Member -MemberType NoteProperty -Name "CreationTime" -Value $(Get-ChildObject -Object $StorageAccount -Path CreationTime.DateTime)
-            $StorageAccountObject | Add-Member -MemberType NoteProperty -Name "CreationTime" -Value $(Get-ChildObject -Object $StorageAccount -Path Properties.creationTime)
-            $StorageAccountObject | Add-Member -MemberType NoteProperty -Name "Kind" -Value $(Get-ChildObject -Object $StorageAccount -Path Kind)
-            $StorageAccountObject | Add-Member -MemberType NoteProperty -Name "Sku Name" -Value $(Get-ChildObject -Object $StorageAccount -Path Sku.Name)
-            $StorageAccountObject | Add-Member -MemberType NoteProperty -Name "Sku Tier" -Value $(Get-ChildObject -Object $StorageAccount -Path Sku.Tier)
-            #$StorageAccountObject | Add-Member -MemberType NoteProperty -Name "CustomDomain" -Value $(Get-ChildObject -Object $StorageAccount -Path CustomDomain)
-            $StorageAccountObject | Add-Member -MemberType NoteProperty -Name "CustomDomain" -Value $(Get-ChildObject -Object $StorageAccount -Path Properties.customDomain.name)
-            #$StorageAccountObject | Add-Member -MemberType NoteProperty -Name "AccessTier" -Value $(Get-ChildObject -Object $StorageAccount -Path AccesTier)
-            $StorageAccountObject | Add-Member -MemberType NoteProperty -Name "AccessTier" -Value $(Get-ChildObject -Object $StorageAccount -Path Properties.accesTier)
-            $StorageAccountObject | Add-Member -MemberType NoteProperty -Name "Identity PrincipalId" -Value $(Get-ChildObject -Object $StorageAccount -Path Identity.PrincipalId)
-            $StorageAccountObject | Add-Member -MemberType NoteProperty -Name "Identity TenantId" -Value $(Get-ChildObject -Object $StorageAccount -Path Identity.TenantId)
-            $StorageAccountObject | Add-Member -MemberType NoteProperty -Name "Identity Type" -Value $(Get-ChildObject -Object $StorageAccount -Path Identity.Type)
-            #$StorageAccountObject | Add-Member -MemberType NoteProperty -Name "HTTPS Only" -Value $(Get-ChildObject -Object $StorageAccount -Path EnableHttpsTrafficOnly)
-            $StorageAccountObject | Add-Member -MemberType NoteProperty -Name "HTTPS Only" -Value $(Get-ChildObject -Object $StorageAccount -Path Properties.supportsHttpsTrafficOnly)
-            #$StorageAccountObject | Add-Member -MemberType NoteProperty -Name "Primary Location" -Value $(Get-ChildObject -Object $StorageAccount -Path PrimaryLocation)
-            $StorageAccountObject | Add-Member -MemberType NoteProperty -Name "Primary Location" -Value $(Get-ChildObject -Object $StorageAccount -Path Properties.primaryLocation)
-            #$StorageAccountObject | Add-Member -MemberType NoteProperty -Name "Status of Primary" -Value $(Get-ChildObject -Object $StorageAccount -Path StatusOfPrimary)
-            $StorageAccountObject | Add-Member -MemberType NoteProperty -Name "Status of Primary" -Value $(Get-ChildObject -Object $StorageAccount -Path Properties.statusOfPrimary)
-            #$StorageAccountObject | Add-Member -MemberType NoteProperty -Name "Encryption Key Source" -Value $(Get-ChildObject -Object $StorageAccount -Path Encryption.Keysource)
-            $StorageAccountObject | Add-Member -MemberType NoteProperty -Name "Encryption Key Source" -Value $(Get-ChildObject -Object $StorageAccount -Path Properties.encryption.keysource)
-            #$StorageAccountObject | Add-Member -MemberType NoteProperty -Name "Blob Encryption" -Value $(Get-ChildObject -Object $StorageAccount -Path Encryption.Services.Blob.Enabled)
-            $StorageAccountObject | Add-Member -MemberType NoteProperty -Name "Blob Encryption" -Value $(Get-ChildObject -Object $StorageAccount -Path Properties.encryption.services.blob.enabled)
-            #$StorageAccountObject | Add-Member -MemberType NoteProperty -Name "Blob Encryption LastEnabledTime" -Value $(Get-ChildObject -Object $StorageAccount -Path Encryption.Services.Blob.LastEnabledTime.DateTime)
-            $StorageAccountObject | Add-Member -MemberType NoteProperty -Name "Blob Encryption LastEnabledTime" -Value $(Get-ChildObject -Object $StorageAccount -Path Properties.encryption.services.blob.lastEnabledTime)
-            #$StorageAccountObject | Add-Member -MemberType NoteProperty -Name "File Encryption" -Value $(Get-ChildObject -Object $StorageAccount -Path Encryption.Services.File.Enabled)
-            $StorageAccountObject | Add-Member -MemberType NoteProperty -Name "File Encryption" -Value $(Get-ChildObject -Object $StorageAccount -Path Properties.encryption.services.file.enabled)
-            #$StorageAccountObject | Add-Member -MemberType NoteProperty -Name "File Encryption LastEnabledTime" -Value $(Get-ChildObject -Object $StorageAccount -Path Encryption.Services.File.LastEnabledTime.DateTime)
-            $StorageAccountObject | Add-Member -MemberType NoteProperty -Name "File Encryption LastEnabledTime" -Value $(Get-ChildObject -Object $StorageAccount -Path Properties.encryption.services.file.lastEnabledTime)
+            $StorageAccountHashTable = [Ordered]@{
+                "Created On" = $(if(Get-ChildObject -Object $StorageAccount -Path Properties.creationTime){[DateTime]::Parse($(Get-ChildObject -Object $StorageAccount -Path Properties.creationTime)).ToUniversalTime()})
+                "Subscription" = $($Subscription.Name)
+                "Resource Group" = $(Get-ChildObject -Object $StorageAccount -Path ResourceGroupName)
+                "Storage Account" = $(Get-ChildObject -Object $StorageAccount -Path ResourceName)
+                "Location" = $(Get-ChildObject -Object $StorageAccount -Path Location)
+                "Kind" = $(Get-ChildObject -Object $StorageAccount -Path Kind)
+                "Sku Name" = $(Get-ChildObject -Object $StorageAccount -Path Sku.Name)
+                "Sku Tier" = $(Get-ChildObject -Object $StorageAccount -Path Sku.Tier)
+                "CustomDomain" = $(Get-ChildObject -Object $StorageAccount -Path Properties.customDomain.name)
+                "AccessTier" = $(Get-ChildObject -Object $StorageAccount -Path Properties.accesTier)
+                "HTTPS Only" = $(Get-ChildObject -Object $StorageAccount -Path Properties.supportsHttpsTrafficOnly)
+                "Primary Location" = $(Get-ChildObject -Object $StorageAccount -Path Properties.primaryLocation)
+                "Status of Primary" = $(Get-ChildObject -Object $StorageAccount -Path Properties.statusOfPrimary)
+                "Secondary Location" = $(Get-ChildObject -Object $StorageAccount -Path Properties.secondaryLocation)
+                "Status of Secondary" = $(Get-ChildObject -Object $StorageAccount -Path Properties.statusOfSecondary)
+                "Encryption Key Source" = $(Get-ChildObject -Object $StorageAccount -Path Properties.encryption.keysource)
+            }
 
-            # Add the custom Storage Account object to the Array
-            $StorageAccountObjects += $StorageAccountObject
+            # Add the VM HashTable to the Custom Object Array
+            $StorageAccountObjects += [PSCustomObject]$StorageAccountHashTable
             Write-Host -NoNewline "."
         }
     }
-    Write-Host
-
     # Output to a CSV file on the user's Desktop
     $FilePath = "$env:HOMEDRIVE$env:HOMEPATH\Desktop\Azure Storage Account Status $($DateTime) (ARM).csv"
     if($StorageAccountObjects){$StorageAccountObjects | Export-Csv -Path $FilePath -Append -NoTypeInformation}
     Write-Host
-
 }
 
 #endregion
@@ -191,11 +184,8 @@ foreach ($Subscription in $Subscriptions)
 #region Classic Storage Account Details
 
 # Loop through each Subscription
-foreach ($Subscription in $Subscriptions)
+foreach ($Subscription in $SelectedSubscriptions)
 {
-
-    $StorageAccountObjects = @()
-
     # Set the current Azure context
     Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Setting context for Subscription: $($Subscription.Name)"
     $Context = Set-AzureRmContext -SubscriptionId $Subscription.Id -TenantId $Account.Context.Tenant.Id
@@ -203,34 +193,41 @@ foreach ($Subscription in $Subscriptions)
 
     # Get all the Classic Storage Accounts in the current Subscription
     Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Retrieving list of Classic Storage Accounts in Subscription: $($Subscription.Name)"
-    #$StorageAccounts = Get-AzureStorageAccount
     $StorageAccounts = Get-AzureRmResource -ResourceType Microsoft.ClassicStorage/storageAccounts -ExpandProperties
     Write-Host
+
+    Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Creating custom list of Classic Storage Accounts in Subscription: $($Subscription.Name)"              
+
+    # Create an empty Array to hold our custom VM objects
+    $StorageAccountObjects = [PSCustomObject]@()
 
     if($StorageAccounts)
     {
         foreach ($StorageAccount in $StorageAccounts)
         {
-            # Create a custom PowerShell object to hold the consolidated ARM VM information
-            $StorageAccountObject = New-Object PSObject
-            $StorageAccountObject | Add-Member -MemberType NoteProperty -Name "Subscription" -Value $($Subscription.Name)
-            $StorageAccountObject | Add-Member -MemberType NoteProperty -Name "Resource Group" -Value $(Get-ChildObject -Object $StorageAccount -Path ResourceGroupName)
-            $StorageAccountObject | Add-Member -MemberType NoteProperty -Name "Storage Account" -Value $(Get-ChildObject -Object $StorageAccount -Path ResourceName)
-            $StorageAccountObject | Add-Member -MemberType NoteProperty -Name "Location" -Value $(Get-ChildObject -Object $StorageAccount -Path Location)
-            $StorageAccountObject | Add-Member -MemberType NoteProperty -Name "CreationTime" -Value $(Get-ChildObject -Object $StorageAccount -Path Properties.creationTime)
-            $StorageAccountObject | Add-Member -MemberType NoteProperty -Name "Account Type" -Value $(Get-ChildObject -Object $StorageAccount -Path Properties.accountType)
+           $StorageAccountHashTable = [Ordered]@{
+                "Created On" = $(if(Get-ChildObject -Object $StorageAccount -Path Properties.creationTime){[DateTime]::Parse($(Get-ChildObject -Object $StorageAccount -Path Properties.creationTime)).ToUniversalTime()})
+                "Subscription" = $($Subscription.Name)
+                "Resource Group" = $(Get-ChildObject -Object $StorageAccount -Path ResourceGroupName)
+                "Storage Account" = $(Get-ChildObject -Object $StorageAccount -Path ResourceName)
+                "Location" = $(Get-ChildObject -Object $StorageAccount -Path Location)
+                "Kind" = $(Get-ChildObject -Object $StorageAccount -Path Kind)
+                "Account Type" = $(Get-ChildObject -Object $StorageAccount -Path Properties.accountType)
+                "Primary Location" = $(Get-ChildObject -Object $StorageAccount -Path Properties.geoPrimaryRegion)
+                "Status of Primary" = $(Get-ChildObject -Object $StorageAccount -Path Properties.statusOfPrimaryRegion)
+                "Secondary Location" = $(Get-ChildObject -Object $StorageAccount -Path Properties.geoSecondaryRegion)
+                "Status of Secondary" = $(Get-ChildObject -Object $StorageAccount -Path Properties.statusOfSecondaryRegion)
+            }
 
-            # Add the custom Storage Account object to the Array
-            $StorageAccountObjects += $StorageAccountObject
+            # Add the VM HashTable to the Custom Object Array
+            $StorageAccountObjects += [PSCustomObject]$StorageAccountHashTable
             Write-Host -NoNewline "."
-
         }
-        Write-Host
     }
-
     # Output to a CSV file on the user's Desktop
     $FilePath = "$env:HOMEDRIVE$env:HOMEPATH\Desktop\Azure Storage Account Status $($DateTime) (Classic).csv"
     if($StorageAccountObjects){$StorageAccountObjects | Export-Csv -Path $FilePath -Append -NoTypeInformation}
+    Write-Host
 }
 
 #endregion
