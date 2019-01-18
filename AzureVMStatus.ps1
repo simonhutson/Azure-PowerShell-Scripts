@@ -2,20 +2,16 @@
 #
 # Retrieve the status of all Azure Virtual Machines across all Subscriptions associated with a specific Azure AD Tenant
 #
+# NOTE: Make sure you have the correct versions of PowerShell installed, either 5.x (requires .NET )
+#       All releases of PowerShell 6.x can be found at https://github.com/PowerShell/PowerShell/releases
+#
+#       >$PSVersionTable.PSVersion
+#
 # NOTE: Download latest Azure and AzureAD Powershell modules, using the following PowerShell commands with elevated privileges
 #
-#       >Install-Module AzureRM -AllowClobber -Force -Confirm
-#       >Install-Module AzureAD -AllowClobber -Force -Confirm
-#       >Install-Module Az.ResourceGraph -AllowClobber -Force -Confirm
+#       >Install-Module -Name Az -AllowClobber -Force -Confirm
+#       >Update-Module -Name Az
 #       >Set-ExecutionPolicy RemoteSigned -Confirm -Force
-#
-# NOTE: Download latest version of Chocolatey package manager for Windows
-#
-#       >https://chocolatey.org/install
-#
-# NOTE: Download latest version of ArmClient
-#
-#       >https://chocolatey.org/packages/ARMClient
 #
 ###############################################################################################################################
 
@@ -39,7 +35,7 @@ Function Get-ChildObject
                 If($Token)
                 {
                     $EvaluationExpression += '.' + $Token
-                    if((Invoke-Expression $EvaluationExpression) -ne $null)
+                    if($null -ne (Invoke-Expression $EvaluationExpression))
                     {
                         $ReturnValue = Invoke-Expression $EvaluationExpression
                     }
@@ -56,19 +52,34 @@ Function Get-ChildObject
 
 #endregion
 
+#region Check PowerShell Version
+
+$PowerShellVersion = $PSVersionTable.PSVersion
+if($PowerShellVersion.Major -lt 5)
+{
+    Write-Host -BackgroundColor Red -ForegroundColor White "PowerShell needs to be version 5 or above."
+    Exit
+}
+
+#endregion
+
+#region Set Globals
+
 $ErrorActionPreference = 'Stop'
 $DateTime = Get-Date -f 'yyyy-MM-dd HHmmss'
+
+#endregion
 
 #region Login
 
 # Login to the user's default Azure AD Tenant
 Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Login to User's default Azure AD Tenant"
-$Account = Add-AzureRmAccount
+$Account = Connect-AzAccount
 Write-Host
 
 # Get the list of Azure AD Tenants this user has access to, and select the correct one
 Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Retrieving list of Azure AD Tenants for this User"
-$Tenants = @(Get-AzureRmTenant)
+$Tenants = @(Get-AzTenant)
 Write-Host
 
 # Get the list of Azure AD Tenants this user has access to, and select the correct one
@@ -85,26 +96,27 @@ else # User has access to no Azure AD Tenant
     Return
 }
 
-# Get Authentication Token, just in case it is required in future
-$TokenCache = (Get-AzureRmContext).TokenCache
-$Token = $TokenCache.ReadItems() | Where-Object { $_.TenantId -eq $Tenant.Id }
-
 # Check if the current Azure AD Tenant is the required Tenant
 if($Account.Context.Tenant.Id -ne $Tenant.Id)
 {
     # Login to the required Azure AD Tenant
     Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Login to correct Azure AD Tenant"
-    $Account = Add-AzureRmAccount -TenantId $Tenant.Id
+    $Account = Connect-AzAccount -Tenant $Tenant.Id
     Write-Host
 }
 
+# Get Authentication Access Token, for use with the Azure REST API
+$TokenCache = (Get-AzContext).TokenCache
+$Token = $TokenCache.ReadItems() | Where-Object { $_.TenantId -eq $Tenant.Id -and $_.DisplayableId -eq $Account.Context.Account.Id}
+$AccessToken = "Bearer " + $Token.AccessToken
+
 #endregion
 
-#region Select subscriptions
+#region Select subscription(s)
 
 # Get list of Subscriptions associated with this Azure AD Tenant, for which this User has access
 Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Retrieving list of Azure Subscriptions for this Azure AD Tenant"
-$AllSubscriptions = @(Get-AzureRmSubscription -TenantId $Tenant.Id)
+$AllSubscriptions = @(Get-AzSubscription -TenantId $Tenant.Id)
 Write-Host
 
 if($AllSubscriptions.Count -gt 1) # User has access to more than one Azure Subscription
@@ -127,18 +139,15 @@ else # User has access to no Azure Subscription
 $VMSizes = @()
 Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Retrieving list of Azure VM Sizes across all locations"
 
-#$Context = Set-AzureRmContext -SubscriptionId $Subscription.Id -TenantId $Account.Context.Tenant.Id
-
 # Get list of Azure Locations associated with this Subscription, for which this User has access and that support VMs
-$Locations = Get-AzureRmLocation | where {$_.Providers -eq "Microsoft.Compute"}
+$Locations = Get-AzLocation | Where-Object {$_.Providers -eq "Microsoft.Compute"}
 
 # Loop through each Azure Location to retrieve a complete list of VM Sizes
 foreach($Location in $Locations)
 {
     try
     {
-        $VMSizes += Get-AzureRmVMSize -Location $($Location.Location) | Select-Object Name, NumberOfCores, MemoryInMB, MaxDataDiskCount
-        #$VMSizes += armclient GET https://management.azure.com/subscriptions/$($Subscription.Id)/providers/Microsoft.Compute/locations/$($Location.Location)/vmSizes?api-version=2017-12-01 | ConvertFrom-Json | Select -ExpandProperty value
+        $VMSizes += Get-AzVMSize -Location $($Location.Location) | Select-Object Name, NumberOfCores, MemoryInMB, MaxDataDiskCount
         Write-Host -NoNewline "."
     }
     catch
@@ -199,12 +208,11 @@ Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Retrieving list of
 $Tags = @()
 foreach($Subscription in $AllSubscriptions)
 {
-    $Context = Set-AzureRmContext -SubscriptionId $Subscription -TenantId $Account.Context.Tenant.Id
-    $Tags += Get-AzureRmTag
-    #$Tags += armclient GET https://management.azure.com/subscriptions/$($Subscription.Id)/tagNames?api-version=2018-02-01  | ConvertFrom-Json | Select -ExpandProperty value
+    $Context = Set-AzContext -SubscriptionId $Subscription -TenantId $Account.Context.Tenant.Id
+    $Tags += Get-AzTag
     Write-Host -NoNewline "."
 }
-$Tags = $Tags | sort -Unique Name
+$Tags = $Tags | Sort-Object -Unique Name
 Write-Host
 
 #endregion
@@ -217,33 +225,29 @@ foreach ($Subscription in $SelectedSubscriptions)
 
     # Set the current Azure context
     Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Setting context for Subscription: $($Subscription.Name)"
-    $Context = Set-AzureRmContext -SubscriptionId $Subscription -TenantId $Account.Context.Tenant.Id
+    $Context = Set-AzContext -SubscriptionId $Subscription -TenantId $Account.Context.Tenant.Id
     Write-Host
 
     # Get all the ARM VMs in the current Subscription
     Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Retrieving list of ARM Virtual Machines in Subscription: $($Subscription.Name)"
-    $VMs = Get-AzureRmResource -ResourceType Microsoft.Compute/virtualMachines -ExpandProperties
+    $VMs = Get-AzResource -ResourceType Microsoft.Compute/virtualMachines -ExpandProperties
     Write-Host
 
     # Get the status of all the ARM VMs in the current Subscription
     Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Retrieving status of ARM Virtual Machines in Subscription: $($Subscription.Name)"
-    $VMStatuses = Get-AzureRmVM -Status
+    $VMStatuses = Get-AzVM -Status
     Write-Host
 
-    # Get the created & last updated date/time of all the ARM VMs in the current Subscription
+    # Get the created & last updated date/time of all the ARM VMs in the current Subscription by calling the Azure REST API
     Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Retrieving created & last updated date/time of ARM Virtual Machines in Subscription: $($Subscription.Name)"
-    $VMDates = armclient GET "https://management.azure.com/subscriptions/$($Subscription.Id)/resources?`$filter=resourcetype eq 'Microsoft.Compute/virtualMachines'&`$expand=createdTime,changedTime&api-version=2018-08-01" | ConvertFrom-Json | Select -ExpandProperty value
+    $Headers = @{"Content-Type"="application\json"; "Authorization"="$AccessToken"}
+    $VMRestProperties = Invoke-RestMethod -Method "Get" -Headers $Headers -Uri "https://management.azure.com/subscriptions/$($Subscription.Id)/resources?`$filter=resourcetype eq 'Microsoft.Compute/virtualMachines'&`$expand=createdTime,changedTime&api-version=2018-08-01" | Select-Object -ExpandProperty value
     Write-Host
 
     # Get all the ARM Network Interfaces in the current Subscription
     Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Retrieving list of ARM Network Interfaces in Subscription: $($Subscription.Name)"
-    $NetworkInterfaces = Get-AzureRmNetworkInterface
+    $NetworkInterfaces = Get-AzNetworkInterface
     Write-Host
-
-    # TO BE COMPLETED: Get all the ARM Public IPs in the current Subscription
-    #Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Retrieving list of ARM Public IPs in Subscription: $($Subscription.Name)"
-    #$PublicIpAddresses = Get-AzureRmPublicIpAddress
-    #Write-Host
 
     # Create an empty Array to hold our custom VM objects
     $VMObjects = [PSCustomObject]@()
@@ -261,15 +265,15 @@ foreach ($Subscription in $SelectedSubscriptions)
             $VMStatus = $VMStatuses | Where-Object {$_.Id -eq $VM.ResourceId} | Get-Unique
 
             # Get the Created & Last Updated Date/Time for this ARM VM
-            $VMDate = $VMDates | Where-Object {$_.id -eq $VM.ResourceId} | Get-Unique
+            $VMDates = $VMRestProperties | Where-Object {$_.id -eq $VM.ResourceId} | Get-Unique
 
             # Lookup the VM Size information for this ARM VM
             $VMSize = $VMSizes | Where-Object {$_.Name -eq $(Get-ChildObject -Object $VM -Path Properties.hardwareProfile.vmSize)}
 
             # Create a custom PowerShell object to hold the consolidated ARM VM information
             $VMHashTable = [Ordered]@{
-                "Created On" = $(if(Get-ChildObject -Object $VMDate -Path createdTime){[DateTime]::Parse($(Get-ChildObject -Object $VMDate -Path createdTime)).ToUniversalTime()})
-                "Modified On" = $(if(Get-ChildObject -Object $VMDate -Path changedTime){[DateTime]::Parse($(Get-ChildObject -Object $VMDate -Path changedTime)).ToUniversalTime()})
+                "Created On" = $(if(Get-ChildObject -Object $VMDates -Path createdTime){[DateTime]::Parse($(Get-ChildObject -Object $VMDates -Path createdTime)).ToUniversalTime()})
+                "Modified On" = $(if(Get-ChildObject -Object $VMDates -Path changedTime){[DateTime]::Parse($(Get-ChildObject -Object $VMDates -Path changedTime)).ToUniversalTime()})
                 "Subscription" = $(Get-ChildObject -Object $Subscription -Path Name)
                 "Resource Group" = $(Get-ChildObject -Object $VM -Path ResourceGroupName)
                 "VM Type" = "ARM"
@@ -306,35 +310,38 @@ foreach ($Subscription in $SelectedSubscriptions)
             $MaxNICCount = 2
             for($i=0; $i -lt $MaxNICCount; $i++)
             {
-                if($VMNetworkInterfaces[$i])
+                if($VMNetworkInterfaces)
                 {
-                    $VMPrimaryIpConfiguration = $VMNetworkInterfaces[$i].IpConfigurations | Where-Object -FilterScript {$_.Primary -eq $true} | Get-Unique
+                    if($VMNetworkInterfaces[$i])
+                    {
+                        $VMPrimaryIpConfiguration = $VMNetworkInterfaces[$i].IpConfigurations | Where-Object -FilterScript {$_.Primary -eq $true} | Get-Unique
 
-                    $NicHashTable = [Ordered]@{
-                        "NIC $($i+1)" = $(Get-ChildObject -Object $VMNetworkInterfaces[$i] -Path Name)
-                        "NIC $($i+1) Primary NIC" = $(Get-ChildObject -Object $VMNetworkInterfaces[$i] -Path Primary)
-                        "NIC $($i+1) Accelerated Networking" = $(Get-ChildObject -Object $VMNetworkInterfaces[$i] -Path EnableAcceleratedNetworking)
-                        "NIC $($i+1) Primary Config" = $(Get-ChildObject -Object $VMPrimaryIpConfiguration -Path Name)
-                        "NIC $($i+1) Primary Config IP" = $(Get-ChildObject -Object $VMPrimaryIpConfiguration -Path PrivateIpAddress)
-                        "NIC $($i+1) Primary Config Allocation" = $(Get-ChildObject -Object $VMPrimaryIpConfiguration -Path PrivateIpAllocationMethod)
-                        "NIC $($i+1) VNET" = $((Get-ChildObject -Object $VMPrimaryIpConfiguration -Path Subnet.Id).Split("/")[8])
-                        "NIC $($i+1) Subnet" = $((Get-ChildObject -Object $VMPrimaryIpConfiguration -Path Subnet.Id).Split("/")[10])
+                        $NicHashTable = [Ordered]@{
+                            "NIC $($i+1)" = $(Get-ChildObject -Object $VMNetworkInterfaces[$i] -Path Name)
+                            "NIC $($i+1) Primary NIC" = $(Get-ChildObject -Object $VMNetworkInterfaces[$i] -Path Primary)
+                            "NIC $($i+1) Accelerated Networking" = $(Get-ChildObject -Object $VMNetworkInterfaces[$i] -Path EnableAcceleratedNetworking)
+                            "NIC $($i+1) Primary Config" = $(Get-ChildObject -Object $VMPrimaryIpConfiguration -Path Name)
+                            "NIC $($i+1) Primary Config IP" = $(Get-ChildObject -Object $VMPrimaryIpConfiguration -Path PrivateIpAddress)
+                            "NIC $($i+1) Primary Config Allocation" = $(Get-ChildObject -Object $VMPrimaryIpConfiguration -Path PrivateIpAllocationMethod)
+                            "NIC $($i+1) VNET" = $((Get-ChildObject -Object $VMPrimaryIpConfiguration -Path Subnet.Id).Split("/")[8])
+                            "NIC $($i+1) Subnet" = $((Get-ChildObject -Object $VMPrimaryIpConfiguration -Path Subnet.Id).Split("/")[10])
+                        }
                     }
-                }
-                else
-                {
-                    $NicHashTable = [Ordered]@{
-                        "NIC $($i+1)" = $null
-                        "NIC $($i+1) Primary NIC" = $null
-                        "NIC $($i+1) Accelerated Networking" = $null
-                        "NIC $($i+1) Primary Config" = $null
-                        "NIC $($i+1) Primary Config IP" = $null
-                        "NIC $($i+1) Primary Config Allocation" = $null
-                        "NIC $($i+1) VNET" = $null
-                        "NIC $($i+1) Subnet" = $null
+                    else
+                    {
+                        $NicHashTable = [Ordered]@{
+                            "NIC $($i+1)" = $null
+                            "NIC $($i+1) Primary NIC" = $null
+                            "NIC $($i+1) Accelerated Networking" = $null
+                            "NIC $($i+1) Primary Config" = $null
+                            "NIC $($i+1) Primary Config IP" = $null
+                            "NIC $($i+1) Primary Config Allocation" = $null
+                            "NIC $($i+1) VNET" = $null
+                            "NIC $($i+1) Subnet" = $null
+                        }
                     }
+                    $VMHashTable += $NicHashTable
                 }
-                $VMHashTable += $NicHashTable
             }
 
             # Get all the Tags for this VM
@@ -358,19 +365,21 @@ foreach ($Subscription in $SelectedSubscriptions)
             }
 
             # TO BE COMPLETED: Retrieve a list of VM sizes to which this VM can be resized
-            #$VMAvailableSizes = Get-AzureRmVMSize -ResourceGroupName $VM.ResourceGroupName -VMName $VM.Name
+            #$VMAvailableSizes = Get-AzVMSize -ResourceGroupName $VM.ResourceGroupName -VMName $VM.Name
             #if($VMAvailableSizes)
             #{
-            #    $VMResizeObject = [ordered]@{
+            #    $VMResizeHashTable = [ordered]@{
             #        "VM Resize Options" = $([String]::Join(";",$VMAvailableSizes.Name))
             #    }
             #}
             #else
             #{
-            #    $VMResizeObject = [ordered]@{
+            #    $VMResizeHashTable = [ordered]@{
             #        "VM Resize Options" = $null
             #    }
             #}
+            #$VMHashTable += $VMResizeHashTable
+
 
             # Add the VM HashTable to the Custom Object Array
             $VMObjects += [PSCustomObject]$VMHashTable
@@ -398,17 +407,18 @@ foreach ($Subscription in $SelectedSubscriptions)
 
     # Set the current Azure context
     Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Setting context for Subscription: $($Subscription.Name)"
-    $Context = Set-AzureRmContext -SubscriptionId $Subscription -TenantId $Account.Context.Tenant.Id
+    $Context = Set-AzContext -SubscriptionId $Subscription -TenantId $Account.Context.Tenant.Id
     Write-Host
 
     # Get all the Classic VMs in the current Subscription
     Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Retrieving list of Classic Virtual Machines in Subscription: $($Subscription.Name)"
-    $VMs = Get-AzureRmResource -ResourceType Microsoft.ClassicCompute/virtualMachines -ExpandProperties
+    $VMs = Get-AzResource -ResourceType Microsoft.ClassicCompute/virtualMachines -ExpandProperties
     Write-Host
 
-    # Get the created & last updated date/time of all the ARM VMs in the current Subscription
+    # Get the created & last updated date/time of all the Classic VMs in the current Subscription by calling the Azure REST API
     Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Retrieving created & last updated date/time of Classic Virtual Machines in Subscription: $($Subscription.Name)"
-    $VMDates = armclient GET "https://management.azure.com/subscriptions/$($Subscription.Id)/resources?`$filter=resourcetype eq 'Microsoft.ClassicCompute/virtualMachines'&`$expand=createdTime,changedTime&api-version=2018-08-01" | ConvertFrom-Json | Select -ExpandProperty value
+    $Headers = @{"Content-Type"="application\json"; "Authorization"="$AccessToken"}
+    $VMRestProperties = Invoke-RestMethod -Method "Get" -Headers $Headers -Uri "https://management.azure.com/subscriptions/$($Subscription.Id)/resources?`$filter=resourcetype eq 'Microsoft.ClassicCompute/virtualMachines'&`$expand=createdTime,changedTime&api-version=2018-08-01" | Select-Object -ExpandProperty value
     Write-Host
 
     # Create an empty Array to hold our custom VM objects
@@ -424,12 +434,12 @@ foreach ($Subscription in $SelectedSubscriptions)
             $VMSize = $VMSizes | Where-Object {$_.Name -eq $(Get-ChildObject -Object $VM -Path Properties.hardwareProfile.size)}
 
             # Get the Created & Last Updated Date/Time for this ARM VM
-            $VMDate = $VMDates | Where-Object {$_.id -eq $VM.ResourceId} | Get-Unique
+            $VMDates = $VMRestProperties | Where-Object {$_.id -eq $VM.ResourceId} | Get-Unique
 
             # Create a custom PowerShell object to hold the consolidated Classic VM information
             $VMHashTable = [Ordered]@{
-                "Created On" = $([DateTime]::Parse($(Get-ChildObject -Object $VMDate -Path createdTime)).ToUniversalTime())
-                "Modified On" = $([DateTime]::Parse($(Get-ChildObject -Object $VMDate -Path changedTime)).ToUniversalTime())
+                "Created On" = $(if(Get-ChildObject -Object $VMDates -Path createdTime){[DateTime]::Parse($(Get-ChildObject -Object $VMDates -Path createdTime)).ToUniversalTime()})
+                "Modified On" = $(if(Get-ChildObject -Object $VMDates -Path changedTime){[DateTime]::Parse($(Get-ChildObject -Object $VMDates -Path changedTime)).ToUniversalTime()})
                 "Subscription" = $(Get-ChildObject -Object $Subscription -Path Name)
                 "Resource Group" = $(Get-ChildObject -Object $VM -Path ResourceGroupName)
                 "VM Type" = "Classic"
@@ -461,7 +471,7 @@ foreach ($Subscription in $SelectedSubscriptions)
         }
         Write-Host
     }
-    
+
     # Output to a CSV file on the user's Desktop
     Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Appending details of Classic Virtual Machines in Subscription: $($Subscription.Name) to file"
     $FilePath = "$env:HOMEDRIVE$env:HOMEPATH\Desktop\Azure VM Status $($DateTime) (Classic).csv"
