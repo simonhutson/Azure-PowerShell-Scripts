@@ -1,6 +1,6 @@
 ###############################################################################################################################
 #
-# Delete all versions of the AzureRm PowerShell Modules on the local machine
+# Uninstall all versions of the AzureRm PowerShell Modules on the local machine
 #
 # NOTE: This requires local administrator priviliges and the latest PowerShellGet module
 #
