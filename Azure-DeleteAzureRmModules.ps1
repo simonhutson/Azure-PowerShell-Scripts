@@ -1,11 +1,10 @@
 ###############################################################################################################################
 #
-# Delete all versions of AzureRm and Az PowerShell Modules on the local machine
+# Delete all versions of the AzureRm PowerShell Modules on the local machine
 #
 # NOTE: This requires local administrator priviliges and the latest PowerShellGet module
 #
 ###############################################################################################################################
-
 
 function Uninstall-AllModules {
     param(
@@ -63,12 +62,4 @@ $AzureRmVersions = (Get-InstalledModule -Name "AzureRm" -AllVersions -ErrorActio
 if ($AzureRmVersions)
 {
     $AzureRmVersions[1..($AzureRmVersions.Length)]  | ForEach-Object { Uninstall-AllModules -TargetModule "AzureRm" -Version ($_.Version) -Force -Verbose }
-}
-
-# Uninstall Az modules, all versions
-# https://docs.microsoft.com/powershell/azure/uninstall-az-ps
-$AzVersions = (Get-InstalledModule -Name "Az" -AllVersions -ErrorAction SilentlyContinue | Select-Object Version)
-if ($AzVersions)
-{
-    $AzVersions[1..($AzVersions.Length)]  | ForEach-Object { Uninstall-AllModules -TargetModule "Az" -Version ($_.Version) -Force -Verbose }
 }
