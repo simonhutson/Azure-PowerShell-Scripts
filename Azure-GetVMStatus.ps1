@@ -52,6 +52,188 @@ Function Get-ChildObject
 
 #endregion
 
+#region Reserved Instance Size Flexibility
+
+# https://docs.microsoft.com/azure/virtual-machines/windows/reserved-vm-instance-size-flexibility
+$VMReservedInstanceSizes = [PSCustomObject]@()
+
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_B1s"; "ReservedInstanceFamily" = "B-Series"; "ReservedInstanceRatio" = "1"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_B2s"; "ReservedInstanceFamily" = "B-Series"; "ReservedInstanceRatio" = "4"}
+
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_B1ms"; "ReservedInstanceFamily" = "B-Series High Memory"; "ReservedInstanceRatio" = "1"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_B2ms"; "ReservedInstanceFamily" = "B-Series High Memory"; "ReservedInstanceRatio" = "4"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_B4ms"; "ReservedInstanceFamily" = "B-Series High Memory"; "ReservedInstanceRatio" = "8"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_B8ms"; "ReservedInstanceFamily" = "B-Series High Memory"; "ReservedInstanceRatio" = "16"}
+
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_D1"; "ReservedInstanceFamily" = "D-Series"; "ReservedInstanceRatio" = "1"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_D2"; "ReservedInstanceFamily" = "D-Series"; "ReservedInstanceRatio" = "2"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_D3"; "ReservedInstanceFamily" = "D-Series"; "ReservedInstanceRatio" = "4"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_D4"; "ReservedInstanceFamily" = "D-Series"; "ReservedInstanceRatio" = "8"}
+
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_D11"; "ReservedInstanceFamily" = "D-Series High Memory"; "ReservedInstanceRatio" = "1"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_D12"; "ReservedInstanceFamily" = "D-Series High Memory"; "ReservedInstanceRatio" = "2"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_D13"; "ReservedInstanceFamily" = "D-Series High Memory"; "ReservedInstanceRatio" = "4"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_D14"; "ReservedInstanceFamily" = "D-Series High Memory"; "ReservedInstanceRatio" = "8"}
+
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_DS1"; "ReservedInstanceFamily" = "DS-Series"; "ReservedInstanceRatio" = "1"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_DS2"; "ReservedInstanceFamily" = "DS-Series"; "ReservedInstanceRatio" = "2"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_DS3"; "ReservedInstanceFamily" = "DS-Series"; "ReservedInstanceRatio" = "4"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_DS4"; "ReservedInstanceFamily" = "DS-Series"; "ReservedInstanceRatio" = "8"}
+
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_DS11"; "ReservedInstanceFamily" = "DS-Series High Memory"; "ReservedInstanceRatio" = "1"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_DS12"; "ReservedInstanceFamily" = "DS-Series High Memory"; "ReservedInstanceRatio" = "2"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_DS13"; "ReservedInstanceFamily" = "DS-Series High Memory"; "ReservedInstanceRatio" = "4"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_DS14"; "ReservedInstanceFamily" = "DS-Series High Memory"; "ReservedInstanceRatio" = "8"}
+
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_DS1_v2"; "ReservedInstanceFamily" = "DSv2-Series"; "ReservedInstanceRatio" = "1"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_DS2_v2"; "ReservedInstanceFamily" = "DSv2-Series"; "ReservedInstanceRatio" = "2"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_DS3_v2"; "ReservedInstanceFamily" = "DSv2-Series"; "ReservedInstanceRatio" = "4"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_DS4_v2"; "ReservedInstanceFamily" = "DSv2-Series"; "ReservedInstanceRatio" = "8"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_DS5_v2"; "ReservedInstanceFamily" = "DSv2-Series"; "ReservedInstanceRatio" = "16"}
+
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_DS11_v2"; "ReservedInstanceFamily" = "DSv2-Series High Memory"; "ReservedInstanceRatio" = "1"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_DS11-1_v2"; "ReservedInstanceFamily" = "DSv2-Series High Memory"; "ReservedInstanceRatio" = "1"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_DS12_v2"; "ReservedInstanceFamily" = "DSv2-Series High Memory"; "ReservedInstanceRatio" = "2"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_DS12-1_v2"; "ReservedInstanceFamily" = "DSv2-Series High Memory"; "ReservedInstanceRatio" = "2"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_DS12-2_v2"; "ReservedInstanceFamily" = "DSv2-Series High Memory"; "ReservedInstanceRatio" = "2"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_DS13_v2"; "ReservedInstanceFamily" = "DSv2-Series High Memory"; "ReservedInstanceRatio" = "4"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_DS13-2_v2"; "ReservedInstanceFamily" = "DSv2-Series High Memory"; "ReservedInstanceRatio" = "4"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_DS13-4_v2"; "ReservedInstanceFamily" = "DSv2-Series High Memory"; "ReservedInstanceRatio" = "4"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_DS14_v2"; "ReservedInstanceFamily" = "DSv2-Series High Memory"; "ReservedInstanceRatio" = "8"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_DS14-4_v2"; "ReservedInstanceFamily" = "DSv2-Series High Memory"; "ReservedInstanceRatio" = "8"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_DS14-8_v2"; "ReservedInstanceFamily" = "DSv2-Series High Memory"; "ReservedInstanceRatio" = "8"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_DS15_v2"; "ReservedInstanceFamily" = "DSv2-Series High Memory"; "ReservedInstanceRatio" = "10"}
+
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_D2s_v3"; "ReservedInstanceFamily" = "DSv3-Series"; "ReservedInstanceRatio" = "1"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_D4s_v3"; "ReservedInstanceFamily" = "DSv3-Series"; "ReservedInstanceRatio" = "2"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_D8s_v3"; "ReservedInstanceFamily" = "DSv3-Series"; "ReservedInstanceRatio" = "4"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_D16s_v3"; "ReservedInstanceFamily" = "DSv3-Series"; "ReservedInstanceRatio" = "8"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_D32s_v3"; "ReservedInstanceFamily" = "DSv3-Series"; "ReservedInstanceRatio" = "16"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_D64s_v3"; "ReservedInstanceFamily" = "DSv3-Series"; "ReservedInstanceRatio" = "32"}
+
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_D1_v2"; "ReservedInstanceFamily" = "Dv2-Series"; "ReservedInstanceRatio" = "1"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_D2_v2"; "ReservedInstanceFamily" = "Dv2-Series"; "ReservedInstanceRatio" = "2"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_D3_v2"; "ReservedInstanceFamily" = "Dv2-Series"; "ReservedInstanceRatio" = "4"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_D4_v2"; "ReservedInstanceFamily" = "Dv2-Series"; "ReservedInstanceRatio" = "8"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_D5_v2"; "ReservedInstanceFamily" = "Dv2-Series"; "ReservedInstanceRatio" = "16"}
+
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_D11_v2"; "ReservedInstanceFamily" = "Dv2-Series High Memory"; "ReservedInstanceRatio" = "1"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_D12_v2"; "ReservedInstanceFamily" = "Dv2-Series High Memory"; "ReservedInstanceRatio" = "2"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_D13_v2"; "ReservedInstanceFamily" = "Dv2-Series High Memory"; "ReservedInstanceRatio" = "4"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_D14_v2"; "ReservedInstanceFamily" = "Dv2-Series High Memory"; "ReservedInstanceRatio" = "8"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_D15_v2"; "ReservedInstanceFamily" = "Dv2-Series High Memory"; "ReservedInstanceRatio" = "10"}
+
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_D2_v3"; "ReservedInstanceFamily" = "Dv3-Series"; "ReservedInstanceRatio" = "1"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_D4_v3"; "ReservedInstanceFamily" = "Dv3-Series"; "ReservedInstanceRatio" = "2"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_D8_v3"; "ReservedInstanceFamily" = "Dv3-Series"; "ReservedInstanceRatio" = "4"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_D16_v3"; "ReservedInstanceFamily" = "Dv3-Series"; "ReservedInstanceRatio" = "8"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_D32_v3"; "ReservedInstanceFamily" = "Dv3-Series"; "ReservedInstanceRatio" = "16"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_D64_v3"; "ReservedInstanceFamily" = "Dv3-Series"; "ReservedInstanceRatio" = "32"}
+
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_E2s_v3"; "ReservedInstanceFamily" = "ESv3-Series"; "ReservedInstanceRatio" = "1"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_E4s_v3"; "ReservedInstanceFamily" = "ESv3-Series"; "ReservedInstanceRatio" = "2"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_E4s-2s_v3"; "ReservedInstanceFamily" = "ESv3-Series"; "ReservedInstanceRatio" = "2"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_E8s_v3"; "ReservedInstanceFamily" = "ESv3-Series"; "ReservedInstanceRatio" = "4"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_E8-2s_v3"; "ReservedInstanceFamily" = "ESv3-Series"; "ReservedInstanceRatio" = "4"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_E8-4s_v3"; "ReservedInstanceFamily" = "ESv3-Series"; "ReservedInstanceRatio" = "4"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_E16s_v3"; "ReservedInstanceFamily" = "ESv3-Series"; "ReservedInstanceRatio" = "8"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_E16-4s_v3"; "ReservedInstanceFamily" = "ESv3-Series"; "ReservedInstanceRatio" = "8"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_E16-8s_v3"; "ReservedInstanceFamily" = "ESv3-Series"; "ReservedInstanceRatio" = "8"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_E20s_v3"; "ReservedInstanceFamily" = "ESv3-Series"; "ReservedInstanceRatio" = "10"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_E32s_v3"; "ReservedInstanceFamily" = "ESv3-Series"; "ReservedInstanceRatio" = "16"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_E32-8s_v3"; "ReservedInstanceFamily" = "ESv3-Series"; "ReservedInstanceRatio" = "16"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_E32-16s_v3"; "ReservedInstanceFamily" = "ESv3-Series"; "ReservedInstanceRatio" = "16"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_E64s_v3"; "ReservedInstanceFamily" = "ESv3-Series"; "ReservedInstanceRatio" = "28.8"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_E64-16s_v3"; "ReservedInstanceFamily" = "ESv3-Series"; "ReservedInstanceRatio" = "28.8"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_E64-32s_v3"; "ReservedInstanceFamily" = "ESv3-Series"; "ReservedInstanceRatio" = "28.8"}
+
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_E2_v3"; "ReservedInstanceFamily" = "Ev3-Series"; "ReservedInstanceRatio" = "1"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_E4_v3"; "ReservedInstanceFamily" = "Ev3-Series"; "ReservedInstanceRatio" = "2"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_E8_v3"; "ReservedInstanceFamily" = "Ev3-Series"; "ReservedInstanceRatio" = "4"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_E16_v3"; "ReservedInstanceFamily" = "Ev3-Series"; "ReservedInstanceRatio" = "8"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_E20_v3"; "ReservedInstanceFamily" = "Ev3-Series"; "ReservedInstanceRatio" = "10"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_E32_v3"; "ReservedInstanceFamily" = "Ev3-Series"; "ReservedInstanceRatio" = "16"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_E64_v3"; "ReservedInstanceFamily" = "Ev3-Series"; "ReservedInstanceRatio" = "32"}
+
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_F1"; "ReservedInstanceFamily" = "F-Series"; "ReservedInstanceRatio" = "1"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_F2"; "ReservedInstanceFamily" = "F-Series"; "ReservedInstanceRatio" = "2"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_F4"; "ReservedInstanceFamily" = "F-Series"; "ReservedInstanceRatio" = "4"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_F8"; "ReservedInstanceFamily" = "F-Series"; "ReservedInstanceRatio" = "8"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_F16"; "ReservedInstanceFamily" = "F-Series"; "ReservedInstanceRatio" = "16"}
+
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_F1s"; "ReservedInstanceFamily" = "FS-Series"; "ReservedInstanceRatio" = "1"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_F2s"; "ReservedInstanceFamily" = "FS-Series"; "ReservedInstanceRatio" = "2"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_F4s"; "ReservedInstanceFamily" = "FS-Series"; "ReservedInstanceRatio" = "4"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_F8s"; "ReservedInstanceFamily" = "FS-Series"; "ReservedInstanceRatio" = "8"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_F16s"; "ReservedInstanceFamily" = "FS-Series"; "ReservedInstanceRatio" = "16"}
+
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_F2s_v2"; "ReservedInstanceFamily" = "FSv2-Series"; "ReservedInstanceRatio" = "1"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_F4s_v2"; "ReservedInstanceFamily" = "FSv2-Series"; "ReservedInstanceRatio" = "2"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_F8s_v2"; "ReservedInstanceFamily" = "FSv2-Series"; "ReservedInstanceRatio" = "4"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_F16s_v2"; "ReservedInstanceFamily" = "FSv2-Series"; "ReservedInstanceRatio" = "8"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_F32s_v2"; "ReservedInstanceFamily" = "FSv2-Series"; "ReservedInstanceRatio" = "16"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_F64s_v2"; "ReservedInstanceFamily" = "FSv2-Series"; "ReservedInstanceRatio" = "32"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_F72s_v2"; "ReservedInstanceFamily" = "FSv2-Series"; "ReservedInstanceRatio" = "36"}
+
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_H8"; "ReservedInstanceFamily" = "H-Series"; "ReservedInstanceRatio" = "1"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_H16"; "ReservedInstanceFamily" = "H-Series"; "ReservedInstanceRatio" = "2"}
+
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_H8m"; "ReservedInstanceFamily" = "H-Series High Memory"; "ReservedInstanceRatio" = "1"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_H16m"; "ReservedInstanceFamily" = "H-Series High Memory"; "ReservedInstanceRatio" = "2"}
+
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_L4s"; "ReservedInstanceFamily" = "LS-Series"; "ReservedInstanceRatio" = "1"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_L8s"; "ReservedInstanceFamily" = "LS-Series"; "ReservedInstanceRatio" = "2"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_L16s"; "ReservedInstanceFamily" = "LS-Series"; "ReservedInstanceRatio" = "4"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_L32s"; "ReservedInstanceFamily" = "LS-Series"; "ReservedInstanceRatio" = "8"}
+
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_M64s"; "ReservedInstanceFamily" = "M-Series"; "ReservedInstanceRatio" = "1"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_M128s"; "ReservedInstanceFamily" = "M-Series"; "ReservedInstanceRatio" = "2"}
+
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_M16s"; "ReservedInstanceFamily" = "M-Series Fractional"; "ReservedInstanceRatio" = "1"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_M32s"; "ReservedInstanceFamily" = "M-Series Fractional"; "ReservedInstanceRatio" = "2"}
+
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_M8ms"; "ReservedInstanceFamily" = "M-Series Fractional High Memory"; "ReservedInstanceRatio" = "1"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_M8-2ms"; "ReservedInstanceFamily" = "M-Series Fractional High Memory"; "ReservedInstanceRatio" = "1"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_M8-4ms"; "ReservedInstanceFamily" = "M-Series Fractional High Memory"; "ReservedInstanceRatio" = "1"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_M16ms"; "ReservedInstanceFamily" = "M-Series Fractional High Memory"; "ReservedInstanceRatio" = "2"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_M16-4ms"; "ReservedInstanceFamily" = "M-Series Fractional High Memory"; "ReservedInstanceRatio" = "2"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_M16-8ms"; "ReservedInstanceFamily" = "M-Series Fractional High Memory"; "ReservedInstanceRatio" = "2"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_M32ms"; "ReservedInstanceFamily" = "M-Series Fractional High Memory"; "ReservedInstanceRatio" = "4"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_M32-8ms"; "ReservedInstanceFamily" = "M-Series Fractional High Memory"; "ReservedInstanceRatio" = "4"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_M32-8ms"; "ReservedInstanceFamily" = "M-Series Fractional High Memory"; "ReservedInstanceRatio" = "4"}
+
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_M32ls"; "ReservedInstanceFamily" = "M-Series Fractional Large"; "ReservedInstanceRatio" = "1"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_M64ls"; "ReservedInstanceFamily" = "M-Series Fractional Large"; "ReservedInstanceRatio" = "2"}
+
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_M64ms"; "ReservedInstanceFamily" = "M-Series High Memory"; "ReservedInstanceRatio" = "1"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_M64-16ms"; "ReservedInstanceFamily" = "M-Series High Memory"; "ReservedInstanceRatio" = "1"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_M64-32ms"; "ReservedInstanceFamily" = "M-Series High Memory"; "ReservedInstanceRatio" = "1"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_M128ms"; "ReservedInstanceFamily" = "M-Series High Memory"; "ReservedInstanceRatio" = "2"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_M128-32ms"; "ReservedInstanceFamily" = "M-Series High Memory"; "ReservedInstanceRatio" = "2"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_M128-64ms"; "ReservedInstanceFamily" = "M-Series High Memory"; "ReservedInstanceRatio" = "2"}
+
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_NC6"; "ReservedInstanceFamily" = "NC-Series"; "ReservedInstanceRatio" = "1"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_NC12"; "ReservedInstanceFamily" = "NC-Series"; "ReservedInstanceRatio" = "2"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_NC24"; "ReservedInstanceFamily" = "NC-Series"; "ReservedInstanceRatio" = "4"}
+
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_NC6s_v2"; "ReservedInstanceFamily" = "NCv2-Series"; "ReservedInstanceRatio" = "1"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_NC12s_v2"; "ReservedInstanceFamily" = "NCv2-Series"; "ReservedInstanceRatio" = "2"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_NC24s_v2"; "ReservedInstanceFamily" = "NCv2-Series"; "ReservedInstanceRatio" = "4"}
+
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_NC6s_v3"; "ReservedInstanceFamily" = "NCv3-Series"; "ReservedInstanceRatio" = "1"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_NC12s_v3"; "ReservedInstanceFamily" = "NCv3-Series"; "ReservedInstanceRatio" = "2"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_NC24s_v3"; "ReservedInstanceFamily" = "NCv3-Series"; "ReservedInstanceRatio" = "4"}
+
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_ND6s"; "ReservedInstanceFamily" = "ND-Series"; "ReservedInstanceRatio" = "1"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_ND12s"; "ReservedInstanceFamily" = "ND-Series"; "ReservedInstanceRatio" = "2"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_ND24s"; "ReservedInstanceFamily" = "ND-Series"; "ReservedInstanceRatio" = "4"}
+
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_NV6"; "ReservedInstanceFamily" = "NV-Series"; "ReservedInstanceRatio" = "1"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_NV12"; "ReservedInstanceFamily" = "NV-Series"; "ReservedInstanceRatio" = "2"}
+$VMReservedInstanceSizes += [PSCustomObject]@{"VMSize" = "Standard_NV24"; "ReservedInstanceFamily" = "NV-Series"; "ReservedInstanceRatio" = "4"}
+
+#endregion
+
 #region Check PowerShell Version
 
 $PowerShellVersion = $PSVersionTable.PSVersion
@@ -107,7 +289,7 @@ if($Account.Context.Tenant.Id -ne $Tenant.Id)
 
 # Get Authentication Access Token, for use with the Azure REST API
 $TokenCache = (Get-AzContext).TokenCache
-$Token = $TokenCache.ReadItems() | Where-Object { $_.TenantId -eq $Tenant.Id -and $_.DisplayableId -eq $Account.Context.Account.Id}
+$Token = $TokenCache.ReadItems() | Where-Object { $_.TenantId -eq $Tenant.Id -and $_.DisplayableId -eq $Account.Context.Account.Id -and $_.Resource -eq "https://management.core.windows.net/"}
 $AccessToken = "Bearer " + $Token.AccessToken
 
 #endregion
@@ -208,7 +390,7 @@ Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Retrieving list of
 $Tags = @()
 foreach($Subscription in $AllSubscriptions)
 {
-    $Context = Set-AzContext -SubscriptionId $Subscription -TenantId $Account.Context.Tenant.Id
+    Set-AzContext -SubscriptionId $Subscription -TenantId $Account.Context.Tenant.Id
     $Tags += Get-AzTag
     Write-Host -NoNewline "."
 }
@@ -270,6 +452,9 @@ foreach ($Subscription in $SelectedSubscriptions)
             # Lookup the VM Size information for this ARM VM
             $VMSize = $VMSizes | Where-Object {$_.Name -eq $(Get-ChildObject -Object $VM -Path Properties.hardwareProfile.vmSize)}
 
+            # Lookup the VM Size information for this ARM VM
+            $VMReservedInstanceSize = $VMReservedInstanceSizes | Where-Object {$_.VMSize -eq $VMSize.Name}
+
             # Create a custom PowerShell object to hold the consolidated ARM VM information
             $VMHashTable = [Ordered]@{
                 "Created On" = $(if(Get-ChildObject -Object $VMDates -Path createdTime){[DateTime]::Parse($(Get-ChildObject -Object $VMDates -Path createdTime)).ToUniversalTime()})
@@ -279,9 +464,11 @@ foreach ($Subscription in $SelectedSubscriptions)
                 "VM Type" = "ARM"
                 "VM Name" = $(Get-ChildObject -Object $VM -Path Name)
                 "VM Location" = $(Get-ChildObject -Object $VM -Path Location)
-                "VM Size" = $(Get-ChildObject -Object $VM -Path Properties.hardwareProfile.vmSize)
+                "VM Size" = $(Get-ChildObject -Object $VMSize -Path Name)
                 "VM Processor Cores" = $(Get-ChildObject -Object $VMSize -Path NumberofCores)
                 "VM Memory (GB)" = $([INT]$(Get-ChildObject -Object $VMSize -Path MemoryInMB)/1024)
+                "VM Reserved Instance Family" = $(Get-ChildObject -Object $VMReservedInstanceSize -Path ReservedInstanceFamily)
+                "VM Reserved Instance Ratio" = $(Get-ChildObject -Object $VMReservedInstanceSize -Path ReservedInstanceRatio)
                 "Availability Set" = $((Get-ChildObject -Object $VM -Path Properties.availabilitySet.id).Split("/")[8])
                 "VM ID" = $(Get-ChildObject -Object $VM -Path Properties.VmId)
                 "Power State" = $(Get-ChildObject -Object $VMStatus -Path PowerState)
@@ -445,7 +632,7 @@ foreach ($Subscription in $SelectedSubscriptions)
                 "VM Type" = "Classic"
                 "VM Name" = $(Get-ChildObject -Object $VM -Path Name)
                 "VM Location" = $(Get-ChildObject -Object $VM -Path Location)
-                "VM Size" = $(Get-ChildObject -Object $VM -Path Properties.hardwareProfile.size)
+                "VMSize" = $(Get-ChildObject -Object $VM -Path Properties.hardwareProfile.size)
                 "VM Processor Cores" = $(Get-ChildObject -Object $VMSize -Path NumberofCores)
                 "VM Memory (GB)" = $([INT]$(Get-ChildObject -Object $VMSize -Path MemoryInMB)/1024)
                 "Status" = $(Get-ChildObject -Object $VM -Path Properties.instanceView.status)
