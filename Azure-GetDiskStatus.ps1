@@ -162,10 +162,26 @@ foreach ($Subscription in $SelectedSubscriptions)
     {
         Write-Host -BackgroundColor Yellow -ForegroundColor DarkBlue "Creating custom list of ARM Disks in Subscription: $($Subscription.Name)"
         foreach ($Resource in $Resources)
-        {
-            
+        {   
+            $VM = $null
+            $VMDiskType = $null
+                       
             # Find the VM to which the Disk is attached
-            $VM = $(if(Get-ChildObject -Object $Resource -Path Properties.diskState){$($VMs | Where-Object {$_.Properties.storageProfile.osDisk.name -eq $(Get-ChildObject -Object $Resource -Path Name) -or $_.Properties.storageProfile.dataDisks.name -eq $(Get-ChildObject -Object $Resource -Path Name)})})
+            $ResourceId = Get-ChildObject -Object $Resource -Path ResourceId
+            $DiskState = Get-ChildObject -Object $Resource -Path Properties.diskState
+            if($DiskState -eq 'Attached')
+            {
+                $VM = $($VMs | Where-Object {$_.Properties.storageProfile.osDisk.managedDisk.id -eq $ResourceId -or $_.Properties.storageProfile.dataDisks.managedDisk.id -eq $ResourceId})
+
+                if($VM.Properties.storageProfile.osDisk.managedDisk.id -eq $ResourceId)
+                {
+                    $VMDiskType = 'OS Disk'
+                }
+                elseif($VM.Properties.storageProfile.dataDisks.managedDisk.id -eq $ResourceId)
+                {
+                    $VMDiskType = 'Data Disk'
+                }
+            }
 
             # Create a custom PowerShell object to hold the consolidated ARM Disk information
             $HashTable = [Ordered]@{
@@ -179,9 +195,9 @@ foreach ($Subscription in $SelectedSubscriptions)
                 "Disk Size (GB)" = $([INT]$(Get-ChildObject -Object $Resource -Path Properties.diskSizeGB))
                 "Disk IOPS" = $([INT]$(Get-ChildObject -Object $Resource -Path Properties.diskIOPSReadWrite))
                 "Disk MBps" = $([INT]$(Get-ChildObject -Object $Resource -Path Properties.diskMBpsReadWrite))
-                "Disk State" = $(Get-ChildObject -Object $Resource -Path Properties.diskState)
+                "Disk State" = $DiskState
                 "VM Name" = $(Get-ChildObject -Object $VM -Path Name)
-                "VM Disk Type" = $(if($VM.Properties.storageProfile.osDisk.name -eq $(Get-ChildObject -Object $Resource -Path Name)){"OS Disk"}elseif($VM.Properties.storageProfile.dataDisks.name -eq $(Get-ChildObject -Object $Resource -Path Name)){"Data Disk"}else{""})
+                "VM Disk Type" = $VMDiskType
                 "Provisioning State" = $(Get-ChildObject -Object $Resource -Path Properties.provisioningState)
                 "Create Option" = $(Get-ChildObject -Object $Resource -Path Properties.creationData.createOption)
             }
